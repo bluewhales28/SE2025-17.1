@@ -1,0 +1,42 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+    paths:
+      - 'backend/user-auth-service/**'
+      - 'backend/submission-result-service/**'
+  pull_request:
+    branches:
+      - 'dev'
+      - 'main'
+    paths:
+      - 'backend/user-auth-service/**'
+      - 'backend/submission-result-service/**'
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # Build từng service riêng (nếu tách module)
+      - name: Build User Auth Service
+        working-directory: backend/user-auth-service
+        run: mvn -B clean package
+
+      - name: Build Submission Result Service
+        working-directory: backend/submission-result-service
+        run: mvn -B clean package
