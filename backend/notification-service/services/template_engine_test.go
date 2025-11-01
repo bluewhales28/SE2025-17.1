@@ -220,7 +220,8 @@ func TestClearCache(t *testing.T) {
 func TestGetTemplatePath(t *testing.T) {
 	te := NewTemplateEngine("templates/email")
 	path := te.GetTemplatePath("welcome")
-	expected := "templates/email/welcome.ejs"
+	// Sử dụng filepath.Join để xây dựng đường dẫn dự kiến (hỗ trợ cả Windows và Unix)
+	expected := filepath.Join("templates/email", "welcome.ejs")
 	if path != expected {
 		t.Errorf("expected '%s', got '%s'", expected, path)
 	}

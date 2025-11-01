@@ -1,4 +1,4 @@
-package email
+package services
 
 import (
 	"strings"
@@ -7,9 +7,9 @@ import (
 	"github.com/bluewhales28/notification-service/models"
 )
 
-// TestRenderTemplate tests the template rendering functionality.
-func TestRenderTemplate(t *testing.T) {
-	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password")
+// TestEmailRenderTemplate tests the template rendering functionality.
+func TestEmailRenderTemplate(t *testing.T) {
+	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password", "templates/email")
 
 	// Test template with variable substitution
 	templateStr := "Hello {{.Name}}, your reset link is {{.ResetLink}}"
@@ -47,6 +47,7 @@ func TestSendEmail(t *testing.T) {
 		getTestEnv("SMTP_PORT", "587"),
 		smtpUser,
 		getTestEnv("SMTP_PASSWORD", ""),
+		"templates/email",
 	)
 
 	// Test sending email
@@ -66,7 +67,7 @@ func TestSendEmail(t *testing.T) {
 
 // TestInvalidTemplate tests error handling for invalid templates.
 func TestInvalidTemplate(t *testing.T) {
-	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password")
+	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password", "templates/email")
 
 	// Invalid template syntax
 	templateStr := "Hello {{.UnclosedVariable"
@@ -86,7 +87,7 @@ func getTestEnv(key, defaultVal string) string {
 
 // TestBatchEmails tests sending multiple emails.
 func TestBatchEmails(t *testing.T) {
-	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password")
+	svc := NewEmailService("smtp.gmail.com", "587", "user@gmail.com", "password", "templates/email")
 
 	template := &models.Template{
 		Name:      "test",

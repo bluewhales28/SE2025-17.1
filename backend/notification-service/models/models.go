@@ -1,12 +1,9 @@
 package models
 
 import (
-	"database/sql/driver"
-	"encoding/json"
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 // Notification đại diện cho một bản ghi thông báo trong cơ sở dữ liệu.

@@ -1,4 +1,4 @@
-package worker
+package services
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/bluewhales28/notification-service/models"
-	"github.com/bluewhales28/notification-service/services"
 	"gorm.io/gorm"
 )
 
@@ -17,7 +16,7 @@ type WorkerPool struct {
 	jobQueue   chan *models.Notification
 	wg         sync.WaitGroup
 	db         *gorm.DB
-	emailSvc   *services.EmailService
+	emailSvc   *EmailService
 	stopChan   chan bool
 }
 

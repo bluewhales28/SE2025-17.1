@@ -7,9 +7,8 @@ import (
 	"github.com/bluewhales28/notification-service/handlers"
 	"github.com/bluewhales28/notification-service/models"
 	"github.com/bluewhales28/notification-service/services"
-	"github.com/bluewhales28/notification-service/services/queue"
-	"github.com/bluewhales28/notification-service/services/worker"
 	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -35,7 +34,7 @@ func main() {
 	emailSvc := services.NewEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.TemplateDir)
 
 	// Khởi tạo hồ bơi worker với 10 worker đồng thời
-	wp := worker.NewWorkerPool(10, db, emailSvc)
+	wp := services.NewWorkerPool(10, db, emailSvc)
 	wp.Start()
 	defer wp.Stop()
 
@@ -44,7 +43,7 @@ func main() {
 
 	// Bắt đầu consumer RabbitMQ trong một goroutine riêng biệt
 	go func() {
-		consumer, err := queue.NewConsumer(cfg.RabbitMQURL, "notification_events", db)
+		consumer, err := services.NewConsumer(cfg.RabbitMQURL, "notification_events", db)
 		if err != nil {
 			log.Printf("Failed to create consumer: %v", err)
 			return
@@ -61,7 +60,7 @@ func main() {
 				Content:  "New event received",
 				Channel:  "email",
 				Status:   "pending",
-				Metadata: models.datatypes.JSONMap(event.Data),
+				Metadata: datatypes.JSONMap(event.Data),
 			}
 
 			// Lưu thông báo vào cơ sở dữ liệu

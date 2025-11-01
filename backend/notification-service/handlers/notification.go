@@ -6,6 +6,7 @@ import (
 
 	"github.com/bluewhales28/notification-service/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +40,7 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 		Channel:  req.Channel,
 		IsRead:   false,
 		Status:   "pending",
-		Metadata: models.datatypes.JSONMap(req.Metadata),
+		Metadata: datatypes.JSONMap(req.Metadata),
 	}
 
 	// Lưu vào cơ sở dữ liệu

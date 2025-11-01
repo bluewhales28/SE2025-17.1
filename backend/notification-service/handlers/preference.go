@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/bluewhales28/notification-service/models"
@@ -112,7 +113,8 @@ func (h *PreferenceHandler) DeletePreference(c *gin.Context) {
 // Returns 0 if parsing fails.
 func parseUserID(userIDStr string) uint {
 	var userID uint64
-	if _, err := (&userID); err != nil {
+	_, err := fmt.Sscanf(userIDStr, "%d", &userID)
+	if err != nil {
 		return 0
 	}
 	return uint(userID)
