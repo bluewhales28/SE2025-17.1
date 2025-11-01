@@ -7,6 +7,7 @@ on:
     paths:
       - 'backend/user-auth-service/**'
       - 'backend/submission-result-service/**'
+      - '.github/workflows/**'
   pull_request:
     branches:
       - 'dev'
@@ -14,7 +15,7 @@ on:
     paths:
       - 'backend/user-auth-service/**'
       - 'backend/submission-result-service/**'
-
+      - '.github/workflows/**'
 jobs:
   build:
     runs-on: self-hosted
