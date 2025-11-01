@@ -30,8 +30,8 @@ jobs:
 
       - name: Build User Auth Service
         working-directory: backend/user-auth-service
-        run: mvn -B clean package
+        run: mvn -B -U -DskipTests=false clean verify
 
       - name: Build Submission Result Service
         working-directory: backend/submission-result-service
-        run: mvn -B clean package
+        run: mvn -B -U -DskipTests=false clean verify
