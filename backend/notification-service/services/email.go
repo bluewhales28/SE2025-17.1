@@ -9,7 +9,7 @@ import (
 	"github.com/bluewhales28/notification-service/models"
 )
 
-// EmailService handles email sending with template rendering support.
+// EmailService xử lý gửi email hỗ trợ hiển thị mẫu động.
 type EmailService struct {
 	SMTPHost     string
 	SMTPPort     string
@@ -18,27 +18,27 @@ type EmailService struct {
 	SenderEmail  string
 }
 
-// NewEmailService creates a new EmailService instance.
+// NewEmailService tạo một phiên bản EmailService mới.
 func NewEmailService(smtpHost, smtpPort, smtpUser, smtpPassword string) *EmailService {
 	return &EmailService{
 		SMTPHost:     smtpHost,
 		SMTPPort:     smtpPort,
 		SMTPUser:     smtpUser,
 		SMTPPassword: smtpPassword,
-		SenderEmail:  smtpUser, // Use SMTP user as sender email
+		SenderEmail:  smtpUser, // Sử dụng người dùng SMTP làm email người gửi
 	}
 }
 
-// RenderTemplate renders a template with the provided data using Go template engine.
-// This supports dynamic content injection (e.g., user name, reset token, etc.)
+// RenderTemplate hiển thị một mẫu với dữ liệu được cung cấp bằng máy tạo mẫu Go.
+// Điều này hỗ trợ tiêm nội dung động (VD: tên người dùng, mã tạo lại, v.v.)
 func (es *EmailService) RenderTemplate(templateStr string, data map[string]interface{}) (string, error) {
-	// Parse template string
+	// Phân tích chuỗi mẫu
 	tmpl, err := template.New("email").Parse(templateStr)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Render template with data
+	// Hiển thị mẫu với dữ liệu
 	var buffer bytes.Buffer
 	err = tmpl.Execute(&buffer, data)
 	if err != nil {
@@ -48,21 +48,21 @@ func (es *EmailService) RenderTemplate(templateStr string, data map[string]inter
 	return buffer.String(), nil
 }
 
-// SendEmail sends an email via SMTP to the specified recipient.
-// It supports both plain text and HTML content.
+// SendEmail gửi email thông qua SMTP tới người nhận được chỉ định.
+// Nó hỗ trợ cả nội dung văn bản thuần và HTML.
 func (es *EmailService) SendEmail(recipient, subject, bodyText, bodyHTML string) error {
-	// Validate inputs
+	// Xác thực đầu vào
 	if recipient == "" || subject == "" {
 		return fmt.Errorf("recipient and subject cannot be empty")
 	}
 
-	// Build email message (MIME format)
+	// Xây dựng thông báo email (định dạng MIME)
 	message := fmt.Sprintf(
 		"From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n%s",
 		es.SenderEmail, recipient, subject, bodyHTML,
 	)
 
-	// Connect to SMTP server and send
+	// Kết nối tới máy chủ SMTP và gửi
 	addr := fmt.Sprintf("%s:%s", es.SMTPHost, es.SMTPPort)
 	auth := smtp.PlainAuth("", es.SMTPUser, es.SMTPPassword, es.SMTPHost)
 
@@ -74,20 +74,20 @@ func (es *EmailService) SendEmail(recipient, subject, bodyText, bodyHTML string)
 	return nil
 }
 
-// SendBatchEmails sends emails to multiple recipients with template rendering.
-// Returns a slice of errors for each failed send (nil if successful).
-// This supports concurrent sending via worker pool patterns.
+// SendBatchEmails gửi email tới nhiều người nhận bằng hiển thị mẫu.
+// Trả về một lát các lỗi cho mỗi lần gửi bị lỗi (nil nếu thành công).
+// Điều này hỗ trợ gửi đồng thời thông qua các mô hình hồ bơi worker.
 func (es *EmailService) SendBatchEmails(recipients []string, template *models.Template, dataList []map[string]interface{}) []error {
 	errors := make([]error, len(recipients))
 
-	// Iterate through recipients and render/send emails
+	// Lặp lại các người nhận và hiển thị/gửi email
 	for i, recipient := range recipients {
 		if i >= len(dataList) {
 			errors[i] = fmt.Errorf("data mismatch: not enough data for recipient %d", i)
 			continue
 		}
 
-		// Render email subject and body with template data
+		// Hiển thị tiêu đề email và nội dung với dữ liệu mẫu
 		subject, err := es.RenderTemplate(template.Subject, dataList[i])
 		if err != nil {
 			errors[i] = fmt.Errorf("failed to render subject for %s: %w", recipient, err)
@@ -100,7 +100,7 @@ func (es *EmailService) SendBatchEmails(recipients []string, template *models.Te
 			continue
 		}
 
-		// Send email
+		// Gửi email
 		err = es.SendEmail(recipient, subject, "", body)
 		if err != nil {
 			errors[i] = err

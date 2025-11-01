@@ -13,36 +13,36 @@ import (
 	"gorm.io/gorm"
 )
 
-// main initializes the notification service with database, RabbitMQ consumer, worker pool, and Gin router.
-// It starts the HTTP server and background queue listener in separate goroutines.
+// main khởi tạo dịch vụ thông báo với cơ sở dữ liệu, consumer RabbitMQ, hồ bơi worker và bộ định tuyến Gin.
+// Nó bắt đầu máy chủ HTTP và trình nghe hàng đợi nền trong các goroutine riêng biệt.
 func main() {
-	// Load configuration from environment
+	// Tải cấu hình từ môi trường
 	cfg := config.LoadConfig()
 
-	// Connect to database
+	// Kết nối tới cơ sở dữ liệu
 	db, err := config.ConnectDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Run database migrations to create tables
+	// Chạy các di chuyển cơ sở dữ liệu để tạo bảng
 	err = migrateDatabase(db)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
 
-	// Initialize services
+	// Khởi tạo các dịch vụ
 	emailSvc := services.NewEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword)
 
-	// Initialize worker pool with 10 concurrent workers
+	// Khởi tạo hồ bơi worker với 10 worker đồng thời
 	wp := worker.NewWorkerPool(10, db, emailSvc)
 	wp.Start()
 	defer wp.Stop()
 
-	// Setup Gin router
+	// Thiết lập bộ định tuyến Gin
 	router := setupRouter(db)
 
-	// Start RabbitMQ consumer in a separate goroutine
+	// Bắt đầu consumer RabbitMQ trong một goroutine riêng biệt
 	go func() {
 		consumer, err := queue.NewConsumer(cfg.RabbitMQURL, "notification_events", db)
 		if err != nil {
@@ -51,9 +51,9 @@ func main() {
 		}
 		defer consumer.Close()
 
-		// Process events from queue
+		// Xử lý sự kiện từ hàng đợi
 		consumer.Listen(func(event *models.Event) error {
-			// Create notification from event
+			// Tạo thông báo từ sự kiện
 			notification := models.Notification{
 				UserID:   event.UserID,
 				Type:     event.EventType,
@@ -64,27 +64,27 @@ func main() {
 				Metadata: models.datatypes.JSONMap(event.Data),
 			}
 
-			// Save notification to database
+			// Lưu thông báo vào cơ sở dữ liệu
 			if err := db.Create(&notification).Error; err != nil {
 				return err
 			}
 
-			// Submit notification to worker pool for processing
+			// Gửi thông báo đến hồ bơi worker để xử lý
 			wp.SubmitJob(&notification)
 			return nil
 		})
 	}()
 
-	// Start HTTP server
+	// Khởi động máy chủ HTTP
 	log.Printf("Starting notification service on port %s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
 
-// migrateDatabase runs all database migrations to create/update tables.
+// migrateDatabase chạy tất cả các di chuyển cơ sở dữ liệu để tạo/cập nhật bảng.
 func migrateDatabase(db *gorm.DB) error {
-	// AutoMigrate creates tables if they don't exist and adds missing columns
+	// AutoMigrate tạo bảng nếu chúng không tồn tại và thêm các cột bị thiếu
 	return db.AutoMigrate(
 		&models.Notification{},
 		&models.Preference{},
@@ -92,7 +92,7 @@ func migrateDatabase(db *gorm.DB) error {
 	)
 }
 
-// setupRouter configures all Gin routes and handlers.
+// setupRouter định cấu hình tất cả các tuyến Gin và trình xử lý.
 func setupRouter(db *gorm.DB) *gin.Engine {
 	router := gin.Default()
 
@@ -101,12 +101,12 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	prefHandler := handlers.NewPreferenceHandler(db)
 	tmplHandler := handlers.NewTemplateHandler(db)
 
-	// Health check endpoint
+	// Kiểm tra tình trạng sức khỏe
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	// Notification routes
+	// Tuyến thông báo
 	notifications := router.Group("/notifications")
 	{
 		notifications.POST("", notifHandler.CreateNotification)
@@ -118,7 +118,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		notifications.GET("/:user_id/unread/count", notifHandler.GetUnreadCount)
 	}
 
-	// Preference routes
+	// Tuyến tùy chọn
 	preferences := router.Group("/preferences")
 	{
 		preferences.PUT("/:user_id", prefHandler.UpdatePreference)
@@ -127,7 +127,7 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 		preferences.DELETE("/:user_id/:channel", prefHandler.DeletePreference)
 	}
 
-	// Template routes
+	// Tuyến mẫu
 	templates := router.Group("/templates")
 	{
 		templates.POST("", tmplHandler.CreateTemplate)

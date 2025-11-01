@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Consumer listens to RabbitMQ queue for events from other microservices.
-// It processes events and triggers notifications accordingly.
+// Consumer lắng nghe hàng đợi RabbitMQ để nhận sự kiện từ các microservice khác.
+// Nó xử lý các sự kiện và kích hoạt thông báo cho phù hợp.
 type Consumer struct {
 	connection *amqp.Connection
 	channel    *amqp.Channel
@@ -19,29 +19,29 @@ type Consumer struct {
 	db         *gorm.DB
 }
 
-// NewConsumer creates a new RabbitMQ consumer with the given connection URL.
+// NewConsumer tạo một consumer RabbitMQ mới với URL kết nối được cung cấp.
 func NewConsumer(amqpURL, queueName string, db *gorm.DB) (*Consumer, error) {
-	// Connect to RabbitMQ
+	// Kết nối tới RabbitMQ
 	conn, err := amqp.Dial(amqpURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to RabbitMQ: %w", err)
 	}
 
-	// Create channel for queue operations
+	// Tạo kênh cho các hoạt động hàng đợi
 	ch, err := conn.Channel()
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("failed to open channel: %w", err)
 	}
 
-	// Declare queue (idempotent - won't fail if exists)
+	// Khai báo hàng đợi (idempotent - không thất bại nếu tồn tại)
 	_, err = ch.QueueDeclare(
-		queueName, // name
-		true,      // durable
+		queueName, // tên
+		true,      // bền vững
 		false,     // autoDelete
-		false,     // exclusive
+		false,     // độc quyền
 		false,     // noWait
-		nil,       // arguments
+		nil,       // tham số
 	)
 	if err != nil {
 		ch.Close()
@@ -57,59 +57,59 @@ func NewConsumer(amqpURL, queueName string, db *gorm.DB) (*Consumer, error) {
 	}, nil
 }
 
-// Listen starts consuming messages from the queue in a blocking loop.
-// Each event is processed by creating a notification in the database.
+// Listen bắt đầu tiêu thụ tin nhắn từ hàng đợi trong vòng lặp chặn.
+// Mỗi sự kiện được xử lý bằng cách tạo thông báo trong cơ sở dữ liệu.
 func (c *Consumer) Listen(processFn func(*models.Event) error) error {
-	// Get messages from queue
+	// Nhận tin nhắn từ hàng đợi
 	messages, err := c.channel.Consume(
-		c.queueName, // queue
-		"",          // consumer (auto-generated)
-		false,       // autoAck (manual acknowledgement)
-		false,       // exclusive
+		c.queueName, // hàng đợi
+		"",          // consumer (tự động tạo)
+		false,       // autoAck (xác nhận thручное)
+		false,       // độc quyền
 		false,       // noLocal
 		false,       // noWait
-		nil,         // arguments
+		nil,         // tham số
 	)
 	if err != nil {
 		return fmt.Errorf("failed to register consumer: %w", err)
 	}
 
-	// Listen to messages in blocking loop
+	// Lắng nghe tin nhắn trong vòng lặp chặn
 	for delivery := range messages {
-		// Parse JSON event from message body
+		// Phân tích chuỗi sự kiện JSON từ nội dung tin nhắn
 		var event models.Event
 		err := json.Unmarshal(delivery.Body, &event)
 		if err != nil {
 			log.Printf("failed to unmarshal event: %v", err)
-			// Negative acknowledge - will requeue the message
+			// Phủ định xác nhận - sẽ đưa lại tin nhắn vào hàng đợi
 			delivery.Nack(false, true)
 			continue
 		}
 
-		// Process event with custom handler function
+		// Xử lý sự kiện bằng hàm xử lý tùy chỉnh
 		if processFn != nil {
 			err = processFn(&event)
 			if err != nil {
 				log.Printf("failed to process event %s: %v, retrying...", event.ID, err)
-				// Increment retry count and requeue
+				// Tăng số lần thử lại và đưa lại vào hàng đợi
 				event.Retry++
 				if event.Retry < 3 {
-					delivery.Nack(false, true) // Requeue
+					delivery.Nack(false, true) // Đưa lại vào hàng đợi
 				} else {
-					delivery.Ack(false) // Discard after 3 retries
+					delivery.Ack(false) // Loại bỏ sau 3 lần thử
 				}
 				continue
 			}
 		}
 
-		// Acknowledge successful processing
+		// Xác nhận xử lý thành công
 		delivery.Ack(false)
 	}
 
 	return nil
 }
 
-// Close closes the RabbitMQ connection and channel.
+// Close đóng kết nối RabbitMQ và kênh.
 func (c *Consumer) Close() error {
 	if c.channel != nil {
 		c.channel.Close()
@@ -120,20 +120,20 @@ func (c *Consumer) Close() error {
 	return nil
 }
 
-// PublishEvent publishes an event to the queue for testing/development.
+// PublishEvent xuất bản một sự kiện vào hàng đợi để kiểm tra/phát triển.
 func (c *Consumer) PublishEvent(event *models.Event) error {
-	// Marshal event to JSON
+	// Sắp xếp sự kiện thành JSON
 	eventBytes, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
-	// Publish to queue
+	// Xuất bản vào hàng đợi
 	err = c.channel.Publish(
-		"",            // exchange (default)
-		c.queueName,   // routing key (queue name)
-		false,         // mandatory
-		false,         // immediate
+		"",            // exchange (mặc định)
+		c.queueName,   // routing key (tên hàng đợi)
+		false,         // bắt buộc
+		false,         // tức thì
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        eventBytes,

@@ -9,28 +9,28 @@ import (
 	"gorm.io/gorm"
 )
 
-// NotificationHandler manages HTTP endpoints for notification operations.
+// NotificationHandler quản lý các điểm cuối HTTP cho các hoạt động thông báo.
 type NotificationHandler struct {
 	db *gorm.DB
 }
 
-// NewNotificationHandler creates a new notification handler.
+// NewNotificationHandler tạo một bộ xử lý thông báo mới.
 func NewNotificationHandler(db *gorm.DB) *NotificationHandler {
 	return &NotificationHandler{db: db}
 }
 
-// CreateNotification handles POST /notifications to create a new notification.
-// Request body should contain NotificationRequest with user_id, type, title, content, channel.
+// CreateNotification xử lý POST /notifications để tạo thông báo mới.
+// Nội dung yêu cầu sẽ chứa NotificationRequest với user_id, type, title, content, channel.
 func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 	var req models.NotificationRequest
 
-	// Parse and validate request
+	// Phân tích cú pháp và xác thực yêu cầu
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Create notification record
+	// Tạo bản ghi thông báo
 	notification := models.Notification{
 		UserID:   req.UserID,
 		Type:     req.Type,
@@ -42,7 +42,7 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 		Metadata: models.datatypes.JSONMap(req.Metadata),
 	}
 
-	// Save to database
+	// Lưu vào cơ sở dữ liệu
 	if err := h.db.Create(&notification).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notification"})
 		return
@@ -51,8 +51,8 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 	c.JSON(http.StatusCreated, notification)
 }
 
-// GetNotifications handles GET /notifications/:user_id to fetch user's notifications.
-// Supports pagination with query parameters: page, limit
+// GetNotifications xử lý GET /notifications/:user_id để tìm nạp thông báo của người dùng.
+// Hỗ trợ phân trang với các tham số truy vấn: page, limit
 func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	userID := c.Param("user_id")
 	page := c.DefaultQuery("page", "1")
@@ -61,11 +61,11 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	pageNum, _ := strconv.Atoi(page)
 	limitNum, _ := strconv.Atoi(limit)
 
-	// Calculate offset for pagination
+	// Tính toán offset cho phân trang
 	offset := (pageNum - 1) * limitNum
 
 	var notifications []models.Notification
-	// Fetch notifications with pagination, ordered by newest first
+	// Tìm nạp thông báo với phân trang, sắp xếp theo mới nhất trước
 	if err := h.db.Where("user_id = ?", userID).
 		Order("created_at DESC").
 		Offset(offset).
@@ -78,7 +78,7 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	c.JSON(http.StatusOK, notifications)
 }
 
-// GetNotification handles GET /notifications/:id to fetch a single notification.
+// GetNotification xử lý GET /notifications/:id để tìm nạp một thông báo.
 func (h *NotificationHandler) GetNotification(c *gin.Context) {
 	id := c.Param("id")
 
@@ -95,11 +95,11 @@ func (h *NotificationHandler) GetNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, notification)
 }
 
-// MarkAsRead handles PUT /notifications/:id/read to mark a notification as read.
+// MarkAsRead xử lý PUT /notifications/:id/read để đánh dấu thông báo là đã đọc.
 func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	id := c.Param("id")
 
-	// Update is_read flag
+	// Cập nhật cờ is_read
 	if err := h.db.Model(&models.Notification{}).Where("id = ?", id).Update("is_read", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notification"})
 		return
@@ -108,11 +108,11 @@ func (h *NotificationHandler) MarkAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
 }
 
-// MarkAsArchived handles PUT /notifications/:id/archive to mark a notification as archived.
+// MarkAsArchived xử lý PUT /notifications/:id/archive để đánh dấu thông báo là được lưu trữ.
 func (h *NotificationHandler) MarkAsArchived(c *gin.Context) {
 	id := c.Param("id")
 
-	// Update status to archived
+	// Cập nhật trạng thái để lưu trữ
 	if err := h.db.Model(&models.Notification{}).Where("id = ?", id).Update("status", "archived").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to archive notification"})
 		return
@@ -121,7 +121,7 @@ func (h *NotificationHandler) MarkAsArchived(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notification archived"})
 }
 
-// DeleteNotification handles DELETE /notifications/:id to delete a notification.
+// DeleteNotification xử lý DELETE /notifications/:id để xóa thông báo.
 func (h *NotificationHandler) DeleteNotification(c *gin.Context) {
 	id := c.Param("id")
 
@@ -133,7 +133,7 @@ func (h *NotificationHandler) DeleteNotification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notification deleted"})
 }
 
-// GetUnreadCount handles GET /notifications/:user_id/unread/count to get count of unread notifications.
+// GetUnreadCount xử lý GET /notifications/:user_id/unread/count để lấy số thông báo chưa đọc.
 func (h *NotificationHandler) GetUnreadCount(c *gin.Context) {
 	userID := c.Param("user_id")
 

@@ -9,12 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Notification represents a notification record in the database.
-// Notifications are sent to users via multiple channels (email, in-app, push).
+// Notification đại diện cho một bản ghi thông báo trong cơ sở dữ liệu.
+// Thông báo được gửi đến người dùng qua nhiều kênh (email, in-app, push).
 type Notification struct {
 	ID        uint            `json:"id" gorm:"primaryKey"`
 	UserID    uint            `json:"user_id" gorm:"index"`
-	Type      string          `json:"type" gorm:"index"` // e.g., "quiz_assigned", "reset_password", "badge_earned"
+	Type      string          `json:"type" gorm:"index"` // VD: "quiz_assigned", "reset_password", "badge_earned"
 	Title     string          `json:"title"`
 	Content   string          `json:"content"`
 	Channel   string          `json:"channel"` // email, in_app, push
@@ -22,36 +22,36 @@ type Notification struct {
 	Status    string          `json:"status"` // pending, sent, failed, archived
 	CreatedAt time.Time       `json:"created_at" gorm:"index"`
 	UpdatedAt time.Time       `json:"updated_at"`
-	Metadata  datatypes.JSONMap `json:"metadata"` // Additional custom data
+	Metadata  datatypes.JSONMap `json:"metadata"` // Dữ liệu tùy chỉnh bổ sung
 }
 
-// TableName sets the table name for Notification model.
+// TableName thiết lập tên bảng cho mô hình Notification.
 func (Notification) TableName() string {
 	return "notifications"
 }
 
-// Preference stores user notification preferences and settings.
-// Users can enable/disable notifications per channel and set frequency.
+// Preference lưu trữ tùy chỉnh thông báo và cài đặt của người dùng.
+// Người dùng có thể bật/tắt thông báo theo kênh và đặt tần suất.
 type Preference struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	UserID    uint      `json:"user_id" gorm:"uniqueIndex:idx_user_channel"`
 	Channel   string    `json:"channel" gorm:"uniqueIndex:idx_user_channel"` // email, push, in_app
 	Enabled   bool      `json:"enabled"`
-	Frequency string    `json:"frequency"` // immediate, daily, weekly, off
+	Frequency string    `json:"frequency"` // immediate, daily, weekly, off (liền tức, hàng ngày, hàng tuần, tắt)
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// TableName sets the table name for Preference model.
+// TableName thiết lập tên bảng cho mô hình Preference.
 func (Preference) TableName() string {
 	return "preferences"
 }
 
-// Template stores email/notification templates that can be dynamically rendered.
-// Templates support Go template syntax for variable interpolation.
+// Template lưu trữ các mẫu email/thông báo có thể được hiển thị động.
+// Mẫu hỗ trợ cú pháp mẫu Go để nội suy biến.
 type Template struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
-	Name      string    `json:"name" gorm:"uniqueIndex"` // e.g., "quiz_assigned", "welcome"
-	Subject   string    `json:"subject"`                 // Email subject (for email templates)
+	Name      string    `json:"name" gorm:"uniqueIndex"` // VD: "quiz_assigned", "welcome"
+	Subject   string    `json:"subject"`                 // Tiêu đề email (cho các mẫu email)
 	BodyHTML  string    `json:"body_html" gorm:"type:text"`
 	BodyText  string    `json:"body_text" gorm:"type:text"`
 	Channel   string    `json:"channel"` // email, push, in_app
@@ -59,23 +59,23 @@ type Template struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// TableName sets the table name for Template model.
+// TableName thiết lập tên bảng cho mô hình Template.
 func (Template) TableName() string {
 	return "templates"
 }
 
-// Event represents an event from other services that triggers notifications.
-// Events are published to RabbitMQ queue by other microservices.
+// Event đại diện cho một sự kiện từ các dịch vụ khác kích hoạt thông báo.
+// Sự kiện được xuất bản vào hàng đợi RabbitMQ bởi các microservice khác.
 type Event struct {
 	ID        string                 `json:"id"`
-	EventType string                 `json:"event_type"`   // e.g., "quiz_assigned"
+	EventType string                 `json:"event_type"`   // VD: "quiz_assigned"
 	UserID    uint                   `json:"user_id"`
 	Timestamp time.Time              `json:"timestamp"`
-	Data      map[string]interface{} `json:"data"`         // Additional context for template rendering
-	Retry     int                    `json:"retry"`        // Retry count for failed events
+	Data      map[string]interface{} `json:"data"`         // Ngữ cảnh bổ sung để hiển thị mẫu
+	Retry     int                    `json:"retry"`        // Số lần thử lại cho các sự kiện bị lỗi
 }
 
-// NotificationRequest is the API request body for creating a notification.
+// NotificationRequest là nội dung yêu cầu API để tạo thông báo.
 type NotificationRequest struct {
 	UserID    uint                   `json:"user_id" binding:"required"`
 	Type      string                 `json:"type" binding:"required"`
@@ -85,14 +85,14 @@ type NotificationRequest struct {
 	Metadata  map[string]interface{} `json:"metadata"`
 }
 
-// PreferenceRequest is the API request body for updating notification preferences.
+// PreferenceRequest là nội dung yêu cầu API để cập nhật tùy chỉnh thông báo.
 type PreferenceRequest struct {
 	Channel   string `json:"channel" binding:"required"`
 	Enabled   bool   `json:"enabled"`
 	Frequency string `json:"frequency"` // immediate, daily, weekly, off
 }
 
-// TemplateRequest is the API request body for creating email templates.
+// TemplateRequest là nội dung yêu cầu API để tạo mẫu email.
 type TemplateRequest struct {
 	Name      string `json:"name" binding:"required"`
 	Subject   string `json:"subject" binding:"required"`

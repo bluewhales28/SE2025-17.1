@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// Config holds all application configuration from environment variables.
+// Config chứa tất cả cấu hình ứng dụng từ các biến môi trường.
 type Config struct {
-	// Database
+	// Cơ sở dữ liệu
 	DBHost     string
 	DBPort     string
 	DBUser     string
@@ -27,12 +27,12 @@ type Config struct {
 	SMTPUser      string
 	SMTPPassword  string
 
-	// Server
+	// Máy chủ
 	Port string
 	Env  string
 }
 
-// LoadConfig loads configuration from environment variables.
+// LoadConfig tải cấu hình từ các biến môi trường.
 func LoadConfig() *Config {
 	return &Config{
 		DBHost:        getEnv("DB_HOST", "localhost"),
@@ -51,7 +51,7 @@ func LoadConfig() *Config {
 	}
 }
 
-// getEnv retrieves an environment variable with a default fallback value.
+// getEnv truy xuất một biến môi trường với giá trị mặc định dự phòng.
 func getEnv(key, defaultVal string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -59,15 +59,15 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
-// ConnectDB establishes a connection to PostgreSQL database using GORM.
+// ConnectDB thiết lập kết nối tới cơ sở dữ liệu PostgreSQL bằng GORM.
 func ConnectDB(cfg *Config) (*gorm.DB, error) {
-	// Build PostgreSQL connection string (DSN)
+	// Xây dựng chuỗi kết nối PostgreSQL (DSN)
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName,
 	)
 
-	// Connect to database
+	// Kết nối tới cơ sở dữ liệu
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

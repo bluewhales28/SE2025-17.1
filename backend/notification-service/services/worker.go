@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// WorkerPool manages concurrent processing of notifications with configurable concurrency.
-// It distributes batch notifications across multiple workers for parallel sending.
+// WorkerPool quản lý xử lý đồng thời của các thông báo với khả năng xử lý có thể cấu hình.
+// Nó phân phối các thông báo hàng loạt trên nhiều worker để xử lý song song.
 type WorkerPool struct {
 	numWorkers int
 	jobQueue   chan *models.Notification
@@ -21,21 +21,21 @@ type WorkerPool struct {
 	stopChan   chan bool
 }
 
-// NewWorkerPool creates a new worker pool with the specified number of concurrent workers.
-func NewWorkerPool(numWorkers int, db *gorm.DB, emailSvc *services.EmailService) *WorkerPool {
+// NewWorkerPool tạo một hồ bơi worker mới với số lượng worker đồng thời được chỉ định.
+func NewWorkerPool(numWorkers int, db *gorm.DB, emailSvc *EmailService) *WorkerPool {
 	return &WorkerPool{
 		numWorkers: numWorkers,
-		jobQueue:   make(chan *models.Notification, numWorkers*2), // Buffered channel
+		jobQueue:   make(chan *models.Notification, numWorkers*2), // Kênh được đệm
 		db:         db,
 		emailSvc:   emailSvc,
 		stopChan:   make(chan bool),
 	}
 }
 
-// Start initializes and starts the worker pool goroutines.
-// Each worker listens to the job queue and processes notifications.
+// Start khởi tạo và bắt đầu các goroutine của hồ bơi worker.
+// Mỗi worker lắng nghe hàng đợi công việc và xử lý thông báo.
 func (wp *WorkerPool) Start() {
-	// Spawn worker goroutines
+	// Sinh ra các goroutine worker
 	for i := 0; i < wp.numWorkers; i++ {
 		wp.wg.Add(1)
 		go wp.worker(i)
@@ -43,8 +43,8 @@ func (wp *WorkerPool) Start() {
 	log.Printf("Worker pool started with %d workers", wp.numWorkers)
 }
 
-// worker is the main work function run by each goroutine.
-// It processes notifications from the job queue until stopped.
+// worker là hàm công việc chính chạy bởi mỗi goroutine.
+// Nó xử lý thông báo từ hàng đợi công việc cho đến khi dừng lại.
 func (wp *WorkerPool) worker(id int) {
 	defer wp.wg.Done()
 
@@ -58,41 +58,41 @@ func (wp *WorkerPool) worker(id int) {
 				continue
 			}
 
-			// Process notification based on channel
+			// Xử lý thông báo dựa trên kênh
 			err := wp.processNotification(notification)
 			if err != nil {
 				log.Printf("Worker %d failed to process notification %d: %v", id, notification.ID, err)
-				// Update notification status to failed
+				// Cập nhật trạng thái thông báo thất bại
 				wp.db.Model(notification).Update("status", "failed")
 			} else {
-				// Update notification status to sent
+				// Cập nhật trạng thái thông báo đã gửi
 				wp.db.Model(notification).Update("status", "sent")
 			}
 		}
 	}
 }
 
-// SubmitJob adds a notification to the worker pool queue for processing.
-// Non-blocking if queue is not full, will block if queue reaches capacity.
+// SubmitJob thêm một thông báo vào hàng đợi hồ bơi worker để xử lý.
+// Không chặn nếu hàng đợi không đầy, sẽ chặn nếu hàng đợi đạt đến công suất.
 func (wp *WorkerPool) SubmitJob(notification *models.Notification) {
 	wp.jobQueue <- notification
 }
 
-// SubmitBatch submits multiple notifications to the worker pool queue.
+// SubmitBatch gửi nhiều thông báo tới hàng đợi hồ bơi worker.
 func (wp *WorkerPool) SubmitBatch(notifications []*models.Notification) {
 	for _, notif := range notifications {
 		wp.SubmitJob(notif)
 	}
 }
 
-// processNotification handles notification sending based on channel type.
-// Currently supports: email, in_app (stored in DB), push (placeholder).
+// processNotification xử lý gửi thông báo dựa trên loại kênh.
+// Hiện tại hỗ trợ: email, in_app (lưu trữ trong DB), push (placeholder).
 func (wp *WorkerPool) processNotification(notification *models.Notification) error {
 	switch notification.Channel {
 	case "email":
 		return wp.sendEmailNotification(notification)
 	case "in_app":
-		// In-app notifications are already stored in DB, just mark as processed
+		// Thông báo trong ứng dụng đã được lưu trữ trong DB, chỉ cần đánh dấu là đã xử lý
 		return nil
 	case "push":
 		return wp.sendPushNotification(notification)
@@ -101,30 +101,30 @@ func (wp *WorkerPool) processNotification(notification *models.Notification) err
 	}
 }
 
-// sendEmailNotification sends an email notification.
-// It retrieves the recipient email from metadata and renders the template.
+// sendEmailNotification gửi thông báo email.
+// Nó truy xuất email người nhận từ siêu dữ liệu và hiển thị mẫu.
 func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) error {
-	// Extract recipient email from metadata
+	// Trích xuất email người nhận từ siêu dữ liệu
 	recipientEmail, ok := notification.Metadata["recipient_email"].(string)
 	if !ok || recipientEmail == "" {
 		return fmt.Errorf("recipient_email not found in metadata")
 	}
 
-	// Get template from database
+	// Lấy mẫu từ cơ sở dữ liệu
 	var template models.Template
 	err := wp.db.Where("name = ?", notification.Type).First(&template).Error
 	if err != nil {
 		return fmt.Errorf("template not found: %w", err)
 	}
 
-	// Render template with notification content
+	// Hiển thị mẫu với nội dung thông báo
 	data := map[string]interface{}{
 		"Title":      notification.Title,
 		"Content":    notification.Content,
 		"Metadata":   notification.Metadata,
 	}
 
-	// Render subject and body
+	// Hiển thị tiêu đề và nội dung
 	subject, err := wp.emailSvc.RenderTemplate(template.Subject, data)
 	if err != nil {
 		return fmt.Errorf("failed to render subject: %w", err)
@@ -135,7 +135,7 @@ func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) e
 		return fmt.Errorf("failed to render body: %w", err)
 	}
 
-	// Send email
+	// Gửi email
 	err = wp.emailSvc.SendEmail(recipientEmail, subject, "", body)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
@@ -144,33 +144,33 @@ func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) e
 	return nil
 }
 
-// sendPushNotification sends a push notification.
-// This is a placeholder implementation that can be integrated with FCM/Firebase.
+// sendPushNotification gửi thông báo đẩy.
+// Đây là một triển khai placeholder có thể được tích hợp với FCM/Firebase.
 func (wp *WorkerPool) sendPushNotification(notification *models.Notification) error {
-	// TODO: Implement FCM (Firebase Cloud Messaging) integration
-	// For now, just log the notification
+	// TODO: Triển khai tích hợp FCM (Firebase Cloud Messaging)
+	// Hiện tại, chỉ ghi nhật ký thông báo
 	log.Printf("Push notification for user %d: %s", notification.UserID, notification.Title)
 	return nil
 }
 
-// Stop gracefully shuts down the worker pool and waits for all workers to finish.
+// Stop tắt hồ bơi worker một cách nhuyễn mịn và chờ tất cả worker hoàn thành.
 func (wp *WorkerPool) Stop() {
-	// Signal all workers to stop
+	// Tín hiệu tất cả worker dừng lại
 	for i := 0; i < wp.numWorkers; i++ {
 		wp.stopChan <- true
 	}
 
-	// Wait for all workers to finish
+	// Chờ tất cả worker hoàn thành
 	wp.wg.Wait()
 
-	// Close channels
+	// Đóng kênh
 	close(wp.jobQueue)
 	close(wp.stopChan)
 
 	log.Println("Worker pool stopped")
 }
 
-// GetQueueSize returns the current number of jobs in the queue.
+// GetQueueSize trả về số lượng công việc hiện tại trong hàng đợi.
 func (wp *WorkerPool) GetQueueSize() int {
 	return len(wp.jobQueue)
 }
