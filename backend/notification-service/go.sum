@@ -1,0 +1,5 @@
+github.com/gin-gonic/gin v1.9.1 h1:4idEAncQnU5cB7BeachG3J31wNh3V5OR9BMILY4vc=
+github.com/streadway/amqp v1.1.0 h1:py8+NK7xNWe75KTUaS/8/gV+40GeS+qvLDltqMdVrU=
+gorm.io/driver/postgres v1.5.2 h1:ytTDxxEzSMu3THiV8KrBE7CDJ4lbCGjIZ8OoXITYbQ=
+gorm.io/gorm v1.25.4 h1:iyNd8fNqWKTS/g2sSAE2aLcL/wvSems3KYwZYeCsLI=
+github.com/joho/godotenv v1.5.1 h1:7P4SfwW0EPLrjqN6XjA0FSVk/eCSVNNjceI8MJ5KDM=
