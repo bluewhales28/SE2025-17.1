@@ -27,6 +27,9 @@ type Config struct {
 	SMTPUser      string
 	SMTPPassword  string
 
+	// Mẫu email
+	TemplateDir string
+
 	// Máy chủ
 	Port string
 	Env  string
@@ -46,6 +49,7 @@ func LoadConfig() *Config {
 		SMTPPort:      getEnv("SMTP_PORT", "587"),
 		SMTPUser:      getEnv("SMTP_USER", ""),
 		SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
+		TemplateDir:   getEnv("TEMPLATE_DIR", "templates/email"),
 		Port:          getEnv("PORT", "8080"),
 		Env:           getEnv("ENV", "development"),
 	}

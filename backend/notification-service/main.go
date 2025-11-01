@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Khởi tạo các dịch vụ
-	emailSvc := services.NewEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword)
+	emailSvc := services.NewEmailService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.TemplateDir)
 
 	// Khởi tạo hồ bơi worker với 10 worker đồng thời
 	wp := worker.NewWorkerPool(10, db, emailSvc)

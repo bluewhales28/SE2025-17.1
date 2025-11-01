@@ -9,23 +9,25 @@ import (
 	"github.com/bluewhales28/notification-service/models"
 )
 
-// EmailService xử lý gửi email hỗ trợ hiển thị mẫu động.
+// EmailService xử lý gửi email hỗ trợ hiển thị mẫu động từ cơ sở dữ liệu hoặc tệp hệ thống.
 type EmailService struct {
-	SMTPHost     string
-	SMTPPort     string
-	SMTPUser     string
-	SMTPPassword string
-	SenderEmail  string
+	SMTPHost       string
+	SMTPPort       string
+	SMTPUser       string
+	SMTPPassword   string
+	SenderEmail    string
+	TemplateEngine *TemplateEngine // Engine cho các mẫu tệp hệ thống
 }
 
-// NewEmailService tạo một phiên bản EmailService mới.
-func NewEmailService(smtpHost, smtpPort, smtpUser, smtpPassword string) *EmailService {
+// NewEmailService tạo một phiên bản EmailService mới với hỗ trợ mẫu tệp hệ thống.
+func NewEmailService(smtpHost, smtpPort, smtpUser, smtpPassword, templateDir string) *EmailService {
 	return &EmailService{
-		SMTPHost:     smtpHost,
-		SMTPPort:     smtpPort,
-		SMTPUser:     smtpUser,
-		SMTPPassword: smtpPassword,
-		SenderEmail:  smtpUser, // Sử dụng người dùng SMTP làm email người gửi
+		SMTPHost:       smtpHost,
+		SMTPPort:       smtpPort,
+		SMTPUser:       smtpUser,
+		SMTPPassword:   smtpPassword,
+		SenderEmail:    smtpUser, // Sử dụng người dùng SMTP làm email người gửi
+		TemplateEngine: NewTemplateEngine(templateDir),
 	}
 }
 
@@ -46,6 +48,17 @@ func (es *EmailService) RenderTemplate(templateStr string, data map[string]inter
 	}
 
 	return buffer.String(), nil
+}
+
+// RenderFileTemplate hiển thị một mẫu từ hệ thống tệp (EJS hoặc HTML).
+// Trả về nội dung HTML được hiển thị.
+func (es *EmailService) RenderFileTemplate(templateName string, data map[string]interface{}) (string, error) {
+	return es.TemplateEngine.RenderTemplate(templateName, data)
+}
+
+// GetAvailableTemplates liệt kê tất cả các mẫu tệp có sẵn.
+func (es *EmailService) GetAvailableTemplates() ([]string, error) {
+	return es.TemplateEngine.ListTemplates()
 }
 
 // SendEmail gửi email thông qua SMTP tới người nhận được chỉ định.

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .header {
+            background-color: #6f42c1;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #6f42c1;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .badge-box {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Bạn Đạt Được Huy Hiệu Mới!</h1>
+        </div>
+        <div class="content">
+            <p>Xin chào <strong>
+                    <%= userName %>
+                </strong>,</p>
+
+            <p>Chúc mừng! Bạn vừa đạt được huy hiệu <strong>
+                    <%= badgeName %>
+                </strong>!</p>
+
+            <div class="badge-box">
+                <h2>
+                    <%= badgeEmoji %>
+                </h2>
+                <p><strong>
+                        <%= badgeName %>
+                    </strong></p>
+                <p>
+                    <%= badgeDescription %>
+                </p>
+            </div>
+
+            <p>Điều kiện đạt được:</p>
+            <ul>
+                <% achievementCriteria.forEach(function(criterion) { %>
+                    <li>
+                        <%= criterion %>
+                    </li>
+                    <% }); %>
+            </ul>
+
+            <p>Bạn đã hoàn thành <strong>
+                    <%= totalBadgesUnlocked %>
+                </strong> huy hiệu!</p>
+
+            <center>
+                <a href="<%= badgesLink %>" class="button">Xem Tất Cả Huy Hiệu</a>
+            </center>
+
+            <p>Hãy tiếp tục cố gắng để mở khóa nhiều huy hiệu hơn!</p>
+
+            <p>Với trân trọng,<br>
+                Đội ngũ Quiz Platform</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Quiz Platform. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </div>
+</body>
+
+</html>
