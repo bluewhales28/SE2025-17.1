@@ -14,14 +14,10 @@ on:
     paths:
       - 'backend/user-auth-service/**'
       - 'backend/submission-result-service/**'
-    paths-ignore:
-      - '.github/**'
-      - 'docs/**'
 
 jobs:
   build:
-    runs-on: self-hosted
-
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +28,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Build từng service riêng (nếu tách module)
       - name: Build User Auth Service
         working-directory: backend/user-auth-service
         run: mvn -B clean package
@@ -40,3 +35,6 @@ jobs:
       - name: Build Submission Result Service
         working-directory: backend/submission-result-service
         run: mvn -B clean package
+
+      - name: Update dependency graph
+        uses: advanced-security/maven-dependency-submission-action@v4
