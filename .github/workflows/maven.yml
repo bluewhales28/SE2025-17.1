@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +35,3 @@ jobs:
       - name: Build Submission Result Service
         working-directory: backend/submission-result-service
         run: mvn -B clean package
-
-      - name: Update dependency graph
-        uses: advanced-security/maven-dependency-submission-action@v4
