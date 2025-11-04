@@ -6,6 +6,7 @@ toolchain go1.23.5
 
 require (
 	github.com/gin-gonic/gin v1.9.1
+	github.com/joho/godotenv v1.5.1
 	github.com/streadway/amqp v1.1.0
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.5.2

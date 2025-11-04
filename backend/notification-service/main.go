@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-
 	"github.com/bluewhales28/notification-service/config"
 	"github.com/bluewhales28/notification-service/handlers"
 	"github.com/bluewhales28/notification-service/models"
@@ -84,11 +83,17 @@ func main() {
 // migrateDatabase chạy tất cả các di chuyển cơ sở dữ liệu để tạo/cập nhật bảng.
 func migrateDatabase(db *gorm.DB) error {
 	// AutoMigrate tạo bảng nếu chúng không tồn tại và thêm các cột bị thiếu
-	return db.AutoMigrate(
-		&models.Notification{},
-		&models.Preference{},
-		&models.Template{},
-	)
+	// Nếu gặp lỗi, cứ tiếp tục - bảng có thể đã tồn tại
+	if err := db.AutoMigrate(&models.Notification{}); err != nil {
+		log.Printf("Warning: Failed to migrate Notification: %v", err)
+	}
+	if err := db.AutoMigrate(&models.Preference{}); err != nil {
+		log.Printf("Warning: Failed to migrate Preference: %v", err)
+	}
+	if err := db.AutoMigrate(&models.Template{}); err != nil {
+		log.Printf("Warning: Failed to migrate Template: %v", err)
+	}
+	return nil
 }
 
 // setupRouter định cấu hình tất cả các tuyến Gin và trình xử lý.
@@ -106,33 +111,31 @@ func setupRouter(db *gorm.DB) *gin.Engine {
 	})
 
 	// Tuyến thông báo
-	notifications := router.Group("/notifications")
-	{
-		notifications.POST("", notifHandler.CreateNotification)
-		notifications.GET("/:user_id", notifHandler.GetNotifications)
-		notifications.GET("/:id", notifHandler.GetNotification)
-		notifications.PUT("/:id/read", notifHandler.MarkAsRead)
-		notifications.PUT("/:id/archive", notifHandler.MarkAsArchived)
-		notifications.DELETE("/:id", notifHandler.DeleteNotification)
-		notifications.GET("/:user_id/unread/count", notifHandler.GetUnreadCount)
-	}
+	// QUAN TRỌNG: Tách thành các route group khác nhau để tránh xung đột parameter
+	router.POST("/notifications", notifHandler.CreateNotification)
+	router.GET("/notifications/user/:user_id/unread/count", notifHandler.GetUnreadCount)
+	router.GET("/notifications/user/:user_id", notifHandler.GetNotifications)
+	router.GET("/notifications/:id", notifHandler.GetNotification)
+	router.PUT("/notifications/:id/read", notifHandler.MarkAsRead)
+	router.PUT("/notifications/:id/archive", notifHandler.MarkAsArchived)
+	router.DELETE("/notifications/:id", notifHandler.DeleteNotification)
 
 	// Tuyến tùy chọn
 	preferences := router.Group("/preferences")
 	{
-		preferences.PUT("/:user_id", prefHandler.UpdatePreference)
-		preferences.GET("/:user_id", prefHandler.GetPreferences)
 		preferences.GET("/:user_id/:channel", prefHandler.GetPreference)
 		preferences.DELETE("/:user_id/:channel", prefHandler.DeletePreference)
+		preferences.PUT("/:user_id", prefHandler.UpdatePreference)
+		preferences.GET("/:user_id", prefHandler.GetPreferences)
 	}
 
 	// Tuyến mẫu
 	templates := router.Group("/templates")
 	{
-		templates.POST("", tmplHandler.CreateTemplate)
-		templates.GET("", tmplHandler.GetTemplates)
-		templates.GET("/:id", tmplHandler.GetTemplate)
 		templates.GET("/name/:name", tmplHandler.GetTemplateByName)
+		templates.GET("", tmplHandler.GetTemplates)
+		templates.POST("", tmplHandler.CreateTemplate)
+		templates.GET("/:id", tmplHandler.GetTemplate)
 		templates.PUT("/:id", tmplHandler.UpdateTemplate)
 		templates.DELETE("/:id", tmplHandler.DeleteTemplate)
 	}
