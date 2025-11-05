@@ -38,7 +38,7 @@ func main() {
 	defer wp.Stop()
 
 	// Thiết lập bộ định tuyến Gin
-	router := setupRouter(db)
+	router := setupRouter(db, wp)
 
 	// Bắt đầu consumer RabbitMQ trong một goroutine riêng biệt
 	go func() {
@@ -97,11 +97,11 @@ func migrateDatabase(db *gorm.DB) error {
 }
 
 // setupRouter định cấu hình tất cả các tuyến Gin và trình xử lý.
-func setupRouter(db *gorm.DB) *gin.Engine {
+func setupRouter(db *gorm.DB, wp *services.WorkerPool) *gin.Engine {
 	router := gin.Default()
 
 	// Initialize handlers
-	notifHandler := handlers.NewNotificationHandler(db)
+	notifHandler := handlers.NewNotificationHandler(db, wp)
 	prefHandler := handlers.NewPreferenceHandler(db)
 	tmplHandler := handlers.NewTemplateHandler(db)
 

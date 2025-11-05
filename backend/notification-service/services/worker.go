@@ -103,18 +103,26 @@ func (wp *WorkerPool) processNotification(notification *models.Notification) err
 // sendEmailNotification gửi thông báo email.
 // Nó truy xuất email người nhận từ siêu dữ liệu và hiển thị mẫu.
 func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) error {
+	log.Printf("[Email] Processing notification ID=%d, type=%s", notification.ID, notification.Type)
+	
 	// Trích xuất email người nhận từ siêu dữ liệu
 	recipientEmail, ok := notification.Metadata["recipient_email"].(string)
 	if !ok || recipientEmail == "" {
-		return fmt.Errorf("recipient_email not found in metadata")
+		errMsg := "recipient_email not found in metadata"
+		log.Printf("[Email] ERROR: %s - metadata=%v", errMsg, notification.Metadata)
+		return fmt.Errorf(errMsg)
 	}
+	log.Printf("[Email] Recipient: %s", recipientEmail)
 
 	// Lấy mẫu từ cơ sở dữ liệu
 	var template models.Template
 	err := wp.db.Where("name = ?", notification.Type).First(&template).Error
 	if err != nil {
-		return fmt.Errorf("template not found: %w", err)
+		errMsg := fmt.Sprintf("template '%s' not found: %v", notification.Type, err)
+		log.Printf("[Email] ERROR: %s", errMsg)
+		return fmt.Errorf(errMsg)
 	}
+	log.Printf("[Email] Template found: ID=%d, Name=%s", template.ID, template.Name)
 
 	// Hiển thị mẫu với nội dung thông báo
 	data := map[string]interface{}{
@@ -126,20 +134,30 @@ func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) e
 	// Hiển thị tiêu đề và nội dung
 	subject, err := wp.emailSvc.RenderTemplate(template.Subject, data)
 	if err != nil {
-		return fmt.Errorf("failed to render subject: %w", err)
+		errMsg := fmt.Sprintf("failed to render subject: %v", err)
+		log.Printf("[Email] ERROR: %s", errMsg)
+		return fmt.Errorf(errMsg)
 	}
+	log.Printf("[Email] Subject rendered: %s", subject)
 
 	body, err := wp.emailSvc.RenderTemplate(template.BodyHTML, data)
 	if err != nil {
-		return fmt.Errorf("failed to render body: %w", err)
+		errMsg := fmt.Sprintf("failed to render body: %v", err)
+		log.Printf("[Email] ERROR: %s", errMsg)
+		return fmt.Errorf(errMsg)
 	}
+	log.Printf("[Email] Body rendered: %d chars", len(body))
 
 	// Gửi email
+	log.Printf("[Email] Sending email to %s with subject: %s", recipientEmail, subject)
 	err = wp.emailSvc.SendEmail(recipientEmail, subject, "", body)
 	if err != nil {
-		return fmt.Errorf("failed to send email: %w", err)
+		errMsg := fmt.Sprintf("failed to send email: %v", err)
+		log.Printf("[Email] ERROR: %s", errMsg)
+		return fmt.Errorf(errMsg)
 	}
-
+	
+	log.Printf("[Email] SUCCESS: Email sent to %s", recipientEmail)
 	return nil
 }
 

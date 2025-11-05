@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/bluewhales28/notification-service/models"
+	"github.com/bluewhales28/notification-service/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -12,12 +13,13 @@ import (
 
 // NotificationHandler quản lý các điểm cuối HTTP cho các hoạt động thông báo.
 type NotificationHandler struct {
-	db *gorm.DB
+	db         *gorm.DB
+	workerPool *services.WorkerPool
 }
 
 // NewNotificationHandler tạo một bộ xử lý thông báo mới.
-func NewNotificationHandler(db *gorm.DB) *NotificationHandler {
-	return &NotificationHandler{db: db}
+func NewNotificationHandler(db *gorm.DB, workerPool *services.WorkerPool) *NotificationHandler {
+	return &NotificationHandler{db: db, workerPool: workerPool}
 }
 
 // CreateNotification xử lý POST /notifications để tạo thông báo mới.
@@ -47,6 +49,11 @@ func (h *NotificationHandler) CreateNotification(c *gin.Context) {
 	if err := h.db.Create(&notification).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create notification"})
 		return
+	}
+
+	// Gửi thông báo đến hồ bơi worker để xử lý
+	if h.workerPool != nil {
+		h.workerPool.SubmitJob(&notification)
 	}
 
 	c.JSON(http.StatusCreated, notification)

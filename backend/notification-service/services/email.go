@@ -77,13 +77,16 @@ func (es *EmailService) SendEmail(recipient, subject, bodyText, bodyHTML string)
 
 	// Kết nối tới máy chủ SMTP và gửi
 	addr := fmt.Sprintf("%s:%s", es.SMTPHost, es.SMTPPort)
+	fmt.Printf("[SMTP] Connecting to %s with user %s\n", addr, es.SMTPUser)
 	auth := smtp.PlainAuth("", es.SMTPUser, es.SMTPPassword, es.SMTPHost)
 
 	err := smtp.SendMail(addr, auth, es.SenderEmail, []string{recipient}, []byte(message))
 	if err != nil {
+		fmt.Printf("[SMTP] ERROR: Failed to send email to %s: %v\n", recipient, err)
 		return fmt.Errorf("failed to send email to %s: %w", recipient, err)
 	}
 
+	fmt.Printf("[SMTP] SUCCESS: Email sent from %s to %s\n", es.SenderEmail, recipient)
 	return nil
 }
 
