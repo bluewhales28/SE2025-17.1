@@ -1,0 +1,609 @@
+================================================================================
+HƯ ỚNG DẪN SỬ DỤNG DỊCH VỤ THÔNG BÁO - NOTIFICATION SERVICE
+================================================================================
+
+PHIÊN BẢN: 1.0.0
+NGÔN NGỮ: Go 1.21+
+FRAMEWORK: Gin, GORM
+CƠ SỞ DỮ LIỆU: PostgreSQL
+MESSAGE QUEUE: RabbitMQ
+
+================================================================================
+1. GIỚI THIỆU
+================================================================================
+
+Dịch vụ thông báo (Notification Service) là một microservice được xây dựng bằng 
+Go giúp quản lý thông báo trên nhiều kênh (email, thông báo trong ứng dụng, đẩy).
+
+TÍ LŨ CHÍNH:
+- Gửi thông báo qua email với mẫu động (template)
+- Lắng nghe sự kiện từ các microservice khác qua RabbitMQ
+- Xử lý thông báo song song với Worker Pool
+- Quản lý tùy chỉnh thông báo của người dùng
+- API REST hoàn chỉnh sử dụng Gin
+- Lưu trữ thông báo trong PostgreSQL
+
+================================================================================
+2. CHUẨN BỊ TRƯỚC KHI CÀI ĐẶT
+================================================================================
+
+2.1 YÊU CẦU HỆ THỐNG
+- Go 1.21 hoặc cao hơn
+- PostgreSQL 12 hoặc cao hơn
+- RabbitMQ 3.8 hoặc cao hơp
+- Docker (tùy chọn)
+
+2.2 CÀI ĐẶT POSTGRES
+
+Windows (sử dụng Chocolatey):
+  choco install postgresql --params '/Password:your_password'
+
+Linux (Ubuntu/Debian):
+  sudo apt-get install postgresql postgresql-contrib
+  sudo systemctl start postgresql
+
+Mac (sử dụng Homebrew):
+  brew install postgresql
+  brew services start postgresql
+
+2.3 KHỞI TẠO CƠ SỞ DỮ LIỆU POSTGRESQL
+
+Đăng nhập vào PostgreSQL:
+  psql -U postgres
+
+Tạo người dùng mới (trong psql):
+  CREATE USER notification_user WITH PASSWORD 'your_secure_password';
+
+Tạo cơ sở dữ liệu:
+  CREATE DATABASE notification_db OWNER notification_user;
+
+Cấp quyền:
+  GRANT ALL PRIVILEGES ON DATABASE notification_db TO notification_user;
+
+Xác minh kết nối:
+  psql -h localhost -U notification_user -d notification_db
+
+2.4 CÀI ĐẶT RABBITMQ
+
+Windows (sử dụng Chocolatey):
+  choco install rabbitmq
+
+Linux (Ubuntu/Debian):
+  sudo apt-get install rabbitmq-server
+  sudo systemctl start rabbitmq-server
+
+Mac (sử dụng Homebrew):
+  brew install rabbitmq
+  brew services start rabbitmq
+
+Kích hoạt web console (tùy chọn):
+  rabbitmq-plugins enable rabbitmq_management
+
+Truy cập tại: http://localhost:15672 (user: guest, password: guest)
+
+================================================================================
+3. CÀI ĐẶT DỰ ÁN
+================================================================================
+
+3.1 CLONE/TẢI DỰ ÁN
+
+cd d:/prj_cnpm/SE2025-17.1/backend/notification-service
+
+3.2 THIẾT LẬP CÁC BIẾN MÔI TRƯỜNG
+
+Sao chép tệp .env.example thành .env:
+  cp .env.example .env  # Mac/Linux
+  copy .env.example .env  # Windows
+
+Chỉnh sửa file .env với các giá trị của bạn:
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=notification_user
+DB_PASSWORD=your_secure_password
+DB_NAME=notification_db
+
+RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password  # Hoặc app password cho Gmail
+
+PORT=8080
+ENV=development
+
+LƯU Ý: Nếu sử dụng Gmail:
+- Bật "Less secure app access" hoặc
+- Tạo App Password tại myaccount.google.com/apppasswords
+
+3.3 CÀI ĐẶT DEPENDENCIES
+
+  go mod download
+
+3.4 CHẠY DỰ ÁN
+
+Phát triển (development):
+  go run main.go
+
+Build production:
+  CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o notification-service .
+
+================================================================================
+4. CẤU TRÚC DỰ ÁN
+================================================================================
+
+notification-service/
+├── config/
+│   └── config.go          # Tải cấu hình, kết nối DB
+├── models/
+│   └── models.go          # Notification, Preference, Template, Event
+├── services/
+│   ├── email.go           # Gửi email, hiển thị mẫu
+│   ├── email_test.go      # Kiểm tra email
+│   ├── queue.go           # Consumer RabbitMQ
+│   ├── worker.go          # Worker Pool để xử lý đồng thời
+│   └── worker_test.go     # Kiểm tra worker
+├── handlers/
+│   ├── notification.go    # HTTP handlers cho thông báo
+│   ├── preference.go      # HTTP handlers cho tùy chỉnh
+│   └── template.go        # HTTP handlers cho mẫu
+├── main.go                # Điểm vào chính
+├── Dockerfile             # Docker config
+├── go.mod & go.sum        # Dependencies
+├── .env.example           # Biến môi trường mẫu
+└── README.md              # Tài liệu
+
+================================================================================
+5. SCHEMA CƠ SỞ DỮ LIỆU
+================================================================================
+
+DỰ ÁN SẼ TỰ ĐỘNG TẠO CÁC BẢNG SAU:
+
+5.1 BẢNG: notifications
+
+  CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    type VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    channel VARCHAR(50),              -- email, push, in_app
+    is_read BOOLEAN DEFAULT FALSE,
+    status VARCHAR(50) DEFAULT 'pending',  -- pending, sent, failed, archived
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+
+5.2 BẢNG: preferences
+
+  CREATE TABLE preferences (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    channel VARCHAR(50),              -- email, push, in_app
+    enabled BOOLEAN DEFAULT TRUE,
+    frequency VARCHAR(50),            -- immediate, daily, weekly, off
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+
+5.3 BẢNG: templates
+
+  CREATE TABLE templates (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) UNIQUE,
+    subject VARCHAR(255),
+    body_html TEXT,
+    body_text TEXT,
+    channel VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+  );
+
+================================================================================
+6. SỬ DỤNG API
+================================================================================
+
+BASE URL: http://localhost:8080
+
+6.1 KIỂM TRA TÌNH TRẠNG DỊCH VỤ
+
+GET /health
+
+Kết quả:
+  {"status":"ok"}
+
+6.2 QUẢN LÝ THÔNG BÁO
+
+6.2.1 Tạo thông báo mới
+POST /notifications
+
+Body:
+  {
+    "user_id": 1,
+    "type": "quiz_assigned",
+    "title": "Quiz mới được gửi",
+    "content": "Bạn đã được gử quiz: Advanced Go",
+    "channel": "email",
+    "metadata": {
+      "recipient_email": "user@example.com",
+      "quiz_id": "123"
+    }
+  }
+
+6.2.2 Lấy danh sách thông báo của người dùng
+GET /notifications/{user_id}?page=1&limit=10
+
+Kết quả:
+  [
+    {
+      "id": 1,
+      "user_id": 1,
+      "type": "quiz_assigned",
+      "title": "Quiz mới",
+      "is_read": false,
+      "status": "sent",
+      "created_at": "2025-11-01T10:00:00Z"
+    }
+  ]
+
+6.2.3 Lấy một thông báo cụ thể
+GET /notifications/{id}
+
+6.2.4 Đánh dấu thông báo là đã đọc
+PUT /notifications/{id}/read
+
+6.2.5 Lưu trữ thông báo
+PUT /notifications/{id}/archive
+
+6.2.6 Xóa thông báo
+DELETE /notifications/{id}
+
+6.2.7 Lấy số thông báo chưa đọc
+GET /notifications/{user_id}/unread/count
+
+Kết quả:
+  {"unread_count": 5}
+
+6.3 QUẢN LÝ TÙY CHỈNH THÔNG BÁO
+
+6.3.1 Cập nhật tùy chỉnh
+PUT /preferences/{user_id}
+
+Body:
+  {
+    "channel": "email",
+    "enabled": true,
+    "frequency": "daily"  -- immediate, daily, weekly, off
+  }
+
+6.3.2 Lấy tất cả tùy chỉnh của người dùng
+GET /preferences/{user_id}
+
+6.3.3 Lấy tùy chỉnh cho một kênh cụ thể
+GET /preferences/{user_id}/{channel}
+
+6.3.4 Xóa tùy chỉnh
+DELETE /preferences/{user_id}/{channel}
+
+6.4 QUẢN LÝ MẪU EMAIL
+
+6.4.1 Tạo mẫu mới
+POST /templates
+
+Body:
+  {
+    "name": "quiz_assigned",
+    "subject": "Quiz: {{.Title}} đã được gửi",
+    "body_html": "<h1>Xin chào {{.UserName}}</h1><p>{{.Content}}</p>",
+    "body_text": "Xin chào {{.UserName}}\n{{.Content}}",
+    "channel": "email"
+  }
+
+6.4.2 Lấy danh sách mẫu
+GET /templates?channel=email
+
+6.4.3 Lấy mẫu theo tên
+GET /templates/name/{name}
+
+6.4.4 Cập nhật mẫu
+PUT /templates/{id}
+
+6.4.5 Xóa mẫu
+DELETE /templates/{id}
+
+================================================================================
+7. EXAMPLES: CÁC VÍ DỤ THỰC HÀNH
+================================================================================
+
+7.1 VÍ DỤ 1: GỬI THÔNG BÁO EMAIL
+
+Bước 1: Tạo mẫu email
+  curl -X POST http://localhost:8080/templates \
+    -H "Content-Type: application/json" \
+    -d '{
+      "name": "welcome",
+      "subject": "Chào mừng {{.UserName}}",
+      "body_html": "<h1>Chào mừng</h1><p>Cảm ơn bạn đã đăng ký</p>",
+      "body_text": "Chào mừng bạn",
+      "channel": "email"
+    }'
+
+Bước 2: Tạo thông báo
+  curl -X POST http://localhost:8080/notifications \
+    -H "Content-Type: application/json" \
+    -d '{
+      "user_id": 1,
+      "type": "welcome",
+      "title": "Chào mừng",
+      "content": "Cảm ơn bạn đã tham gia",
+      "channel": "email",
+      "metadata": {
+        "recipient_email": "user@example.com",
+        "UserName": "Nguyễn Văn A"
+      }
+    }'
+
+Worker sẽ tự động xử lý và gửi email
+
+7.2 VÍ DỤ 2: LẮNG NGHE SỰ KIỆN TỪ RABBITMQ
+
+Pub lish sự kiện lên RabbitMQ (từ service khác):
+
+{
+  "id": "evt_123",
+  "event_type": "quiz_completed",
+  "user_id": 1,
+  "timestamp": "2025-11-01T10:00:00Z",
+  "data": {
+    "quiz_name": "Go Advanced",
+    "score": "85"
+  }
+}
+
+Service sẽ tự động:
+1. Lắng nghe sự kiện từ hàng đợi
+2. Tạo thông báo trong cơ sở dữ liệu
+3. Gửi nó đến Worker Pool
+4. Worker gửi email (hoặc kênh khác)
+
+7.3 VÍ DỤ 3: QUẢN LÝ TÙY CHỈNH NGƯỜI DÙNG
+
+Người dùng tắt thông báo email:
+  curl -X PUT http://localhost:8080/preferences/1 \
+    -H "Content-Type: application/json" \
+    -d '{
+      "channel": "email",
+      "enabled": false
+    }'
+
+Kiểm tra tùy chỉnh:
+  curl http://localhost:8080/preferences/1/email
+
+================================================================================
+8. CHẠY VỚI DOCKER
+================================================================================
+
+8.1 BUILD DOCKER IMAGE
+
+  docker build -t notification-service:latest .
+
+8.2 CHẠY CONTAINER
+
+Đơn giản (với mạng HOST):
+  docker run -p 8080:8080 \
+    -e DB_HOST=host.docker.internal \
+    -e DB_USER=notification_user \
+    -e DB_PASSWORD=password \
+    -e DB_NAME=notification_db \
+    -e RABBITMQ_URL=amqp://guest:guest@host.docker.internal:5672/ \
+    -e SMTP_USER=your@email.com \
+    -e SMTP_PASSWORD=password \
+    notification-service:latest
+
+8.3 DOCKER COMPOSE (THỰC HÀNH TỐT)
+
+Tạo file docker-compose.yml:
+
+  version: '3.8'
+  services:
+    postgres:
+      image: postgres:15
+      environment:
+        POSTGRES_USER: notification_user
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: notification_db
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+
+    rabbitmq:
+      image: rabbitmq:3.12-management
+      environment:
+        RABBITMQ_DEFAULT_USER: guest
+        RABBITMQ_DEFAULT_PASS: guest
+      ports:
+        - "5672:5672"
+        - "15672:15672"
+
+    notification-service:
+      build: .
+      environment:
+        DB_HOST: postgres
+        DB_USER: notification_user
+        DB_PASSWORD: password
+        DB_NAME: notification_db
+        RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+        SMTP_USER: your@email.com
+        SMTP_PASSWORD: password
+      ports:
+        - "8080:8080"
+      depends_on:
+        - postgres
+        - rabbitmq
+
+  volumes:
+    postgres_data:
+
+Khởi động tất cả:
+  docker-compose up -d
+
+================================================================================
+9. KIỂM TRA VÀ DEBUGGING
+================================================================================
+
+9.1 KIỂM TRA LỖI KẾT NỐI POSTGRES
+
+Kiểm tra thông tin kết nối:
+  psql -h localhost -U notification_user -d notification_db
+
+Xem tất cả các bảng:
+  \dt
+
+Xem dữ liệu thông báo:
+  SELECT * FROM notifications;
+
+9.2 KIỂM TRA RABBITMQ
+
+Kiểm tra kết nối:
+  rabbitmqctl status
+
+Kiểm tra hàng đợi:
+  rabbitmqctl list_queues
+
+Xóa hàng đợi (nếu cần):
+  rabbitmqctl delete_queue notification_events
+
+9.3 CHẠY TESTS
+
+Chạy tất cả các bài kiểm tra:
+  go test ./...
+
+Chạy với coverage:
+  go test -v -coverprofile=coverage.out ./...
+  go tool cover -html=coverage.out
+
+Kiểm tra một gói cụ thể:
+  go test -v ./services
+
+================================================================================
+10. LỖI PHỔ BIẾN VÀ GIẢI PHÁP
+================================================================================
+
+LỖI 1: "connection refused" trong Postgres
+GIẢI PHÁP:
+- Kiểm tra PostgreSQL đang chạy: sudo systemctl status postgresql
+- Kiểm tra host/port trong .env
+- Kiểm tra DB tồn tại: psql -h localhost -U postgres -l
+
+LỖI 2: "Failed to connect to RabbitMQ"
+GIẢI PHÁP:
+- Kiểm tra RabbitMQ: sudo systemctl status rabbitmq-server
+- Kiểm tra URL trong .env
+- Kiểm tra credentials
+
+LỖI 3: "Failed to send email"
+GIẢI PHÁP:
+- Kiểm tra SMTP credentials trong .env
+- Kiểm tra tường lửa port 587
+- Với Gmail: sử dụng App Password, không phải mật khẩu chính
+
+LỖI 4: "Worker goroutine panic"
+GIẢI PHÁP:
+- Xem logs để biết lỗi cụ thể
+- Kiểm tra DB connection pool
+- Kiểm tra mẫu email có lỗi cú pháp Go template
+
+================================================================================
+11. TÍNH NĂNG NÂNG CAO
+================================================================================
+
+11.1 CẤU HÌNH WORKER CONCURRENCY
+
+Trong main.go, thay đổi:
+  wp := worker.NewWorkerPool(10, db, emailSvc)  // 10 workers
+
+Sử dụng:
+  wp := worker.NewWorkerPool(50, db, emailSvc)  // 50 workers (tăng throughput)
+
+11.2 THEO DÕI TRẠNG THÁI HÀNG ĐỢI
+
+Thêm endpoint mới trong router:
+  router.GET("/queue/size", func(c *gin.Context) {
+    c.JSON(200, gin.H{"queue_size": wp.GetQueueSize()})
+  })
+
+11.3 TÍCH HỢP NOTIFICATION GROUPS
+
+Chỉnh sửa handlers/notification.go để nhóm thông báo cùng loại:
+  SELECT type, COUNT(*) as count FROM notifications 
+  WHERE user_id = ? AND is_read = FALSE 
+  GROUP BY type
+
+================================================================================
+12. PRODUCTION DEPLOYMENT
+================================================================================
+
+12.1 CHECKLIST TRƯỚC KHI DEPLOY
+
+[ ] Đặt ENV=production
+[ ] Sử dụng PostgreSQL với backups hàng ngày
+[ ] Cấu hình HTTPS (reverse proxy: nginx/apache)
+[ ] Thiết lập monitoring/logging (ELK, Prometheus)
+[ ] Cấu hình horizontal scaling
+[ ] Database connection pooling
+[ ] Rate limiting trên API
+
+12.2 SCALING
+
+- Chạy nhiều instance:
+  docker run -p 8081:8080 notification-service:latest
+  docker run -p 8082:8080 notification-service:latest
+
+- Sử dụng Load Balancer (nginx):
+  upstream notification_service {
+    server localhost:8080;
+    server localhost:8081;
+    server localhost:8082;
+  }
+
+12.3 MONITORING
+
+Thêm metrics Prometheus:
+  import "github.com/prometheus/client_golang/prometheus"
+
+Theo dõi:
+- Email gửi thành công/thất bại
+- Queue depth
+- Worker busy time
+
+================================================================================
+13. TÀI LIỆU THAM KHẢO
+================================================================================
+
+Go Gin: https://github.com/gin-gonic/gin
+GORM: https://gorm.io
+PostgreSQL: https://www.postgresql.org
+RabbitMQ: https://www.rabbitmq.com
+Docker: https://www.docker.com
+
+================================================================================
+14. HỖ TRỢ VÀ LIÊN LẠC
+================================================================================
+
+Nếu gặp vấn đề:
+1. Kiểm tra logs: docker logs [container_id]
+2. Kiểm tra database: psql
+3. Kiểm tra RabbitMQ admin panel
+4. Xem file .env
+5. Chạy tests: go test ./...
+
+================================================================================
+HOÀN THÀNH!
+
+Bạn giờ đã sẵn sàng sử dụng Notification Service.
+Chúc bạn thành công!
+
+================================================================================
