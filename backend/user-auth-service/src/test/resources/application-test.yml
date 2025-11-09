@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+  mail:
+    host: localhost
+    port: 587
+    username: test@example.com
+    password: test
+
+app:
+  mail:
+    from: test@example.com
+  frontend:
+    url: http://localhost:3000
+  jwt:
+    secret: test-secret-key-for-testing-only
+    expiration: 86400000
