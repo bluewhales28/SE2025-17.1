@@ -26,7 +26,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .authorizeHttpRequests(authorizeRequests ->
-                        authorizeRequests.requestMatchers(HttpMethod.POST, PUBLIC_URL).permitAll()
+                        authorizeRequests.requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/users").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/introspect").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/logout").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority("SCOPE_user:read")
                                 .requestMatchers(HttpMethod.GET, "/users/all").hasAnyAuthority("SCOPE_admin:read")
                                 .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
