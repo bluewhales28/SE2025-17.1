@@ -13,8 +13,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+server:
+  port: 8081
 
 app:
   jwt:
     secret: 5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b
     expiration: 86400000 # 24 hours in milliseconds
+  notification:
+    service-url: http://localhost:8080
