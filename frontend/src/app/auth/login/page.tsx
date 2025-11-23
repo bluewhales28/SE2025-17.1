@@ -5,36 +5,49 @@ import Image from "next/image"
 import Link from "next/link"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/useAuth"
+import { LoginSchema, LoginSchemaType } from "@/lib/validate"
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
 
 export default function LoginPage() {
     const router = useRouter()
-    const { login, isLoading, error } = useAuth()
+    const { login, isLoading } = useAuth()
     const [showPassword, setShowPassword] = useState(false)
+    const [globalError, setGlobalError] = useState("")
 
-    const [formData, setFormData] = useState({
-        email: "",
-        password: ""
+    const form = useForm<LoginSchemaType>({
+        resolver: zodResolver(LoginSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
     })
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-
+    const onSubmit = async (values: LoginSchemaType) => {
+        setGlobalError("")
         try {
             await login({
-                email: formData.email,
-                passwordHash: formData.password
+                email: values.email,
+                passwordHash: values.password
             })
 
             alert("Đăng nhập thành công!")
-            // router.push("/dashboard")
+            router.push("/")
 
-        } catch (err) {
-            // Error is handled by the hook and displayed via the error state
+        } catch (err: any) {
+            setGlobalError(err.message || "Đăng nhập thất bại")
         }
     }
 
@@ -59,76 +72,89 @@ export default function LoginPage() {
                         <h1 className="text-4xl font-bold text-[#6B59CE]">Đăng nhập</h1>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
-                            <div className="p-3 text-base text-red-500 bg-red-50 rounded-md text-center">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="space-y-2">
-                            <Label htmlFor="email" className="text-base text-[#6B59CE]">Tài khoản</Label>
-                            <Input
-                                id="email"
-                                placeholder="Nhập tài khoản hoặc email đăng ký"
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                required
-                                className="h-14 text-lg bg-[#E0E7FF]/30 focus-visible:ring-[#6B59CE]"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password" className="text-base text-[#6B59CE]">Mật khẩu</Label>
-                            <div className="relative">
-                                <Input
-                                    id="password"
-                                    placeholder="Nhập mật khẩu"
-                                    type={showPassword ? "text" : "password"}
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    required
-                                    className="h-14 text-lg bg-[#E0E7FF]/30 focus-visible:ring-[#6B59CE] pr-12"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#6B59CE]"
-                                >
-                                    {showPassword ? (
-                                        <EyeOff className="h-6 w-6" />
-                                    ) : (
-                                        <Eye className="h-6 w-6" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end">
-                            <Link
-                                href="/forgot-password"
-                                className="text-base font-medium text-[#6B59CE] hover:underline"
-                            >
-                                Quên mật khẩu
-                            </Link>
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full h-14 text-lg bg-[#6B59CE] hover:bg-[#5a4cb4] text-white"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Đang xử lý...
-                                </>
-                            ) : (
-                                "Đăng nhập"
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            {globalError && (
+                                <div className="p-3 text-base text-red-500 bg-red-50 rounded-md text-center">
+                                    {globalError}
+                                </div>
                             )}
-                        </Button>
-                    </form>
+
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-base text-[#6B59CE]">Tài khoản</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Nhập tài khoản hoặc email đăng ký"
+                                                className="h-14 text-lg bg-[#E0E7FF]/30 focus-visible:ring-[#6B59CE]"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-base text-[#6B59CE]">Mật khẩu</FormLabel>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Input
+                                                    type={showPassword ? "text" : "password"}
+                                                    placeholder="Nhập mật khẩu"
+                                                    className="h-14 text-lg bg-[#E0E7FF]/30 focus-visible:ring-[#6B59CE] pr-12"
+                                                    {...field}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#6B59CE]"
+                                                >
+                                                    {showPassword ? (
+                                                        <EyeOff className="h-6 w-6" />
+                                                    ) : (
+                                                        <Eye className="h-6 w-6" />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex justify-end">
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-base font-medium text-[#6B59CE] hover:underline"
+                                >
+                                    Quên mật khẩu
+                                </Link>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full h-14 text-lg bg-[#6B59CE] hover:bg-[#5a4cb4] text-white"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Đăng nhập"
+                                )}
+                            </Button>
+                        </form>
+                    </Form>
                 </div>
             </div>
         </div>
