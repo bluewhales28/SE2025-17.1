@@ -13,3 +13,13 @@ export interface ApiResponse<T> {
     message: string;
     data: T;
 }
+
+export interface RegisterRequest {
+    email: string;
+    passwordHash: string;
+    fullName: string;
+    phoneNumber: string;
+    dateOfBirth: string; // YYYY-MM-DD
+    gender: "MALE" | "FEMALE" | "OTHER";
+    role: "USER";
+}

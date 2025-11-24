@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { authService } from "@/services/auth.service";
-import { AuthRequest, AuthResponse } from "@/types/auth";
+import { AuthRequest, AuthResponse, RegisterRequest } from "@/types/auth";
 import Cookies from "js-cookie";
 
 export const useAuth = () => {
@@ -27,6 +27,20 @@ export const useAuth = () => {
         }
     };
 
+    const register = async (data: RegisterRequest) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await authService.register(data);
+            return response;
+        } catch (err: any) {
+            setError(err.message || "Có lỗi xảy ra");
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = () => {
         Cookies.remove("accessToken");
         localStorage.removeItem("accessToken");
@@ -35,6 +49,7 @@ export const useAuth = () => {
 
     return {
         login,
+        register,
         logout,
         isLoading,
         error,

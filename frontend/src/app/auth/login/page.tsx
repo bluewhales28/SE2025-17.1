@@ -153,6 +153,13 @@ export default function LoginPage() {
                                     "Đăng nhập"
                                 )}
                             </Button>
+
+                            <div className="text-center text-base">
+                                Chưa có tài khoản?{" "}
+                                <Link href="/auth/register" className="text-[#6B59CE] hover:underline font-medium">
+                                    Đăng ký ngay
+                                </Link>
+                            </div>
                         </form>
                     </Form>
                 </div>

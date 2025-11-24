@@ -8,7 +8,7 @@ The User Authentication Service now integrates with the Notification Service to 
 
 ```
 ┌─────────────────────────────────────────┐
-│   User Auth Service (Port 8081)         │
+│   User Auth Service (Port 8082)         │
 │  ┌──────────────────────────────────┐   │
 │  │  UserServiceImpl                  │   │
 │  │  - User Registration             │   │
@@ -117,7 +117,7 @@ public UserResponse updateProfile(String email, UpdateUserRequest updateUserRequ
 
 ```yaml
 server:
-  port: 8081
+  port: 8082
 
 app:
   notification:
@@ -236,7 +236,7 @@ cd backend/user-auth-service
 ### Test User Registration (with notification)
 
 ```bash
-curl -X POST http://localhost:8081/users \
+curl -X POST http://localhost:8082/users \
   -H "Content-Type: application/json" \
   -d '{
     "email": "newuser@example.com",
@@ -258,7 +258,7 @@ Expected:
 
 ```bash
 # First login
-curl -X POST http://localhost:8081/auth/login \
+curl -X POST http://localhost:8082/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "newuser@example.com",
@@ -266,7 +266,7 @@ curl -X POST http://localhost:8081/auth/login \
   }'
 
 # Then update profile
-curl -X PUT http://localhost:8081/users/profile \
+curl -X PUT http://localhost:8082/users/profile \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
