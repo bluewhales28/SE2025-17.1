@@ -1,0 +1,35 @@
+5.NOTIFICATION SERVICE
+Gửi email, thông báo trong app, push notifications.
+Tính năng (Features)
+Hệ thống thông báo 
+Mỗi sự kiện (event) được ánh xạ với một template tương ứng (ví dụ: “quiz_assigned”, “reset_password”, “badge_earned”…).
+
+
+Nhận sự kiện từ các service khác 
+Message Queue Consumer lắng nghe sự kiện từ RabbitMQ 
+Tự động xử lý sự kiện và gửi thông báo tương ứng.
+Gửi Email (Email Notification)
+Sử dụng hệ thống email template động:
+Template lưu trong DB (templates table) hoặc trong file system.
+Có thể render template bằng HTML + Go template engine.
+Gửi qua SMTP / SendGrid / Mailgun (configurable).
+Hỗ trợ gửi hàng loạt (batch send) qua worker.
+Cấu hình & Tùy chọn người dùng
+Lưu thông báo trong DB (notifications table) với trạng thái: unread / read / archived
+Hỗ trợ real-time update (qua WebSocket hoặc SSE).
+Có thể nhóm thông báo cùng loại để hiển thị gọn gàng
+Worker & Queue Processing
+Hàng loạt thông báo được xử lý trong background worker.
+Worker đọc từ hàng đợi (queue) và gửi song song nhiều kênh.
+Có cơ chế batch sending, requeue on failure, và throughput benchmark.
+Hỗ trợ cấu hình concurrency để tối ưu hiệu năng gửi (ví dụ: 50 worker / 1 consumer group).
+Cơ sở dữ liệu (DB Schema)
+notifications
+(id, user_id, type, title, content, channel, is_read, created_at, metadata_json)
+preferences
+(id, user_id, channel, enabled, frequency, updated_at)
+templates
+(id, name, subject, body_html, body_text, channel, created_at, updated_at)
+Kiểm thử & Benchmark
+Unit test cho các module: email rendering, queue consumer, push handler.
+Integration test với RabbitMQ và FCM (mock).
