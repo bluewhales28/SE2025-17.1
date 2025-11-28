@@ -28,12 +28,8 @@ export const RegisterSchema = z.object({
     dateOfBirth: z.string().refine((date) => new Date(date).toString() !== 'Invalid Date', {
         message: "Ngày sinh không hợp lệ",
     }),
-    gender: z.union([
-        z.literal("MALE"),
-        z.literal("FEMALE"),
-        z.literal("OTHER")
-    ], {
-        message: "Vui lòng chọn giới tính",
+    gender: z.enum(["MALE", "FEMALE", "OTHER"], {
+        errorMap: () => ({ message: "Vui lòng chọn giới tính" }),
     }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",
