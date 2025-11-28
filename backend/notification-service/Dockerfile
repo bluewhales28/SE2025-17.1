@@ -1,5 +1,5 @@
 # Build stage: compile Go application
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -28,6 +28,7 @@ RUN apk --no-cache add ca-certificates
 
 # Copy binary from builder
 COPY --from=builder /app/notification-service .
+COPY --from=builder /app/templates ./templates
 
 # Expose port
 EXPOSE 8080
