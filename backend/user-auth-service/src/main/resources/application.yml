@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/quizz
-    username: postgres
-    password: 123456
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:quizz}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,8 +22,8 @@ server:
 
 app:
   jwt:
-    secret: 5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b
+    secret: ${JWT_SECRET:5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
     expiration: 86400000 # 24 hours in milliseconds
   notification:
-    service-url: http://localhost:8080
+    service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8080}
 
