@@ -1,0 +1,17 @@
+@layer components {
+    .landing-section {
+        @apply w-full py-16 md:py-24;
+    }
+
+    .landing-container {
+        @apply container mx-auto px-4 md:px-6;
+    }
+
+    .landing-heading {
+        @apply text-4xl md:text-6xl font-bold text-[#1A1D28] tracking-tight;
+    }
+
+    .landing-subheading {
+        @apply text-lg md:text-xl text-[#586380] leading-relaxed;
+    }
+}
