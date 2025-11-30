@@ -22,28 +22,32 @@ export function FeatureCard({
     return (
         <div
             className={cn(
-                "bg-white rounded-3xl shadow-sm p-6 flex flex-col items-center text-center transition-transform hover:-translate-y-1 duration-300",
+                "bg-white rounded-[2rem] shadow-lg hover:shadow-xl p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 duration-500 h-full min-h-[520px] justify-between border border-gray-100",
                 className
             )}
         >
-            <div className={cn("w-full h-48 mb-6 rounded-2xl flex items-center justify-center relative overflow-hidden", colorClass)}>
-                {/* Placeholder for illustration */}
-                {imageSrc ? (
-                    <div className="relative w-full h-full">
-                        {/* Use a placeholder div if no real image is available yet */}
-                        <div className="absolute inset-0 flex items-center justify-center text-white/50 font-bold text-2xl">
-                            Illustration
+            <div className="w-full flex flex-col items-center">
+                <div className={cn("w-full h-64 mb-8 rounded-3xl flex items-center justify-center relative overflow-hidden group", colorClass)}>
+                    {/* Placeholder for illustration */}
+                    {imageSrc ? (
+                        <div className="relative w-full h-full">
+                            <div className="absolute inset-0 flex items-center justify-center text-white/50 font-bold text-2xl">
+                                Illustration
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="w-32 h-32 bg-white/20 rounded-full blur-2xl absolute" />
-                )}
+                    ) : (
+                        <>
+                            <div className="w-40 h-40 bg-white/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700" />
+                            <div className="w-24 h-24 bg-white/10 rounded-full blur-xl absolute top-1/4 left-1/4 animate-pulse" />
+                        </>
+                    )}
+                </div>
+                <h3 className="text-3xl font-bold text-[#1A1D28] mb-4 tracking-tight">{title}</h3>
+                <p className="text-[#586380] mb-8 text-base leading-relaxed max-w-[280px]">
+                    {description}
+                </p>
             </div>
-            <h3 className="text-2xl font-bold text-[#1A1D28] mb-3">{title}</h3>
-            <p className="text-[#586380] mb-8 text-sm leading-relaxed max-w-[200px]">
-                {description}
-            </p>
-            <Button className="bg-[#0A092D] text-white hover:bg-[#0A092D]/90 rounded-full px-8 py-6 font-bold text-base">
+            <Button className="bg-[#0A092D] text-white hover:bg-[#0A092D]/90 rounded-full px-10 py-7 font-bold text-lg w-full max-w-[200px] transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-indigo-500/25">
                 {buttonText}
             </Button>
         </div>
