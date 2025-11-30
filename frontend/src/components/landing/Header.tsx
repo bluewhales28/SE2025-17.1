@@ -1,31 +1,42 @@
 import Link from "next/link";
+import { BrandButton } from "@/components/common/BrandButton";
 import { Button } from "@/components/ui/button";
 import { Command } from "lucide-react";
 
 export function Header() {
   return (
-    <header className="w-full py-4 px-6 flex items-center justify-between bg-white">
-      <div className="flex items-center gap-8">
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="bg-black text-white p-1 rounded-sm">
-             <Command size={24} />
+          <div className="bg-[#4255FF] text-white p-1.5 rounded-lg">
+             <Command size={20} />
           </div>
-          <span className="font-bold text-xl hidden">Quizlet</span>
+          <span className="font-bold text-xl text-[#1A1D28]">QuizApp</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-700">
-          <Link href="#" className="hover:text-black">
-            Công cụ
-          </Link>
-          <Link href="#" className="hover:text-black">
+
+        {/* Navigation - Desktop */}
+        <nav className="hidden md:flex items-center gap-8">
+          <Link href="#" className="text-sm font-medium text-gray-600 hover:text-[#4255FF] transition-colors">
             Chủ đề
           </Link>
+          <Link href="#" className="text-sm font-medium text-gray-600 hover:text-[#4255FF] transition-colors">
+            Tính năng
+          </Link>
+          <Link href="#" className="text-sm font-medium text-gray-600 hover:text-[#4255FF] transition-colors">
+            Giải pháp
+          </Link>
         </nav>
-      </div>
-      <div className="flex items-center gap-4">
-        <Button asChild className="bg-[#4255FF] hover:bg-[#4255FF]/90 text-white font-semibold rounded-md px-6">
-          <Link href="/auth/login">Đăng nhập</Link>
-        </Button>
-      </div>
-    </header>
-  );
+
+        {/* Auth Buttons */}
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" className="text-gray-600 hover:text-[#4255FF] font-semibold">
+            <Link href="/auth/login">Đăng nhập</Link>
+          </Button>
+          <BrandButton asChild size="default" className="px-6">
+            <Link href="/auth/register">Đăng ký</Link>
+          </BrandButton>
+        </div>
+        </header>
+    );
 }
