@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Các route không cần authentication (public routes)
-const publicRoutes = ["/auth/login", "/auth/register", "/forgot-password"];
+const publicRoutes = ["/", "/auth/login", "/auth/register", "/forgot-password"];
+
+// Các route chỉ dành cho guest (đã đăng nhập thì không vào được nữa)
+const authRoutes = ["/auth/login", "/auth/register", "/forgot-password"];
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -10,8 +13,8 @@ export function middleware(request: NextRequest) {
     // Lấy token từ cookie
     const token = request.cookies.get("accessToken")?.value;
 
-    // 1. Nếu đã đăng nhập (có token) mà cố truy cập trang login/register -> Redirect về dashboard (hoặc trang chủ)
-    if (token && publicRoutes.includes(pathname)) {
+    // 1. Nếu đã đăng nhập (có token) mà cố truy cập trang auth (login/register) -> Redirect về trang chủ
+    if (token && authRoutes.includes(pathname)) {
         return NextResponse.redirect(new URL("/", request.url));
     }
 
