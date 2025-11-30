@@ -29,7 +29,7 @@ export const RegisterSchema = z.object({
         message: "Ngày sinh không hợp lệ",
     }),
     gender: z.enum(["MALE", "FEMALE", "OTHER"], {
-        errorMap: () => ({ message: "Vui lòng chọn giới tính" }),
+        message: "Vui lòng chọn giới tính",
     }),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Mật khẩu không khớp",
