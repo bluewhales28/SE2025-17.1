@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:quizz}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:123456}
+    url: jdbc:postgresql://localhost:5432/quizz
+    username: postgres
+    password: 123456
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -12,18 +12,24 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-  
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
 
-server:
-  port: 8082
-
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 app:
   jwt:
-    secret: ${JWT_SECRET:5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
+    secret: 5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b
     expiration: 86400000 # 24 hours in milliseconds
+  frontend:
+    url: http://localhost:3000
   notification:
-    service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8080}
+    exchange: notification-exchange
+    routingKey: notification.email
 
+ 
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.quizapp.user_auth_service: DEBUG
