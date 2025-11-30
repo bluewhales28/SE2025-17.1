@@ -9,7 +9,6 @@ import com.quizapp.user_auth_service.exception.ErrorCode;
 import com.quizapp.user_auth_service.mapper.UserMapper;
 import com.quizapp.user_auth_service.model.User;
 import com.quizapp.user_auth_service.repository.UserRepository;
-import com.quizapp.user_auth_service.service.NotificationClient;
 import com.quizapp.user_auth_service.service.PasswordService;
 import com.quizapp.user_auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordService passwordService;
-    private final NotificationClient notificationClient;
 
     @Override
     public PageResponse<?> findByFullName(String fullName, int page, int size) {
@@ -62,9 +60,6 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-
-        // Send welcome notification to new user
-        notificationClient.sendWelcomeNotification(user.getId(), user.getEmail(), user.getFullName());
 
         return userMapper.toUserReponse(user);
     }
@@ -129,12 +124,6 @@ public class UserServiceImpl implements UserService {
         }
         
         user = userRepository.save(user);
-        
-        // Send in-app notification about profile update
-        notificationClient.sendInAppNotification(user.getId(), 
-            "Cập nhật hồ sơ", 
-            "Hồ sơ của bạn đã được cập nhật thành công");
-
         return userMapper.toUserReponse(user);
     }
 }

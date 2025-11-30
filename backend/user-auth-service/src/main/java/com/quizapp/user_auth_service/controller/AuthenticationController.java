@@ -2,12 +2,14 @@ package com.quizapp.user_auth_service.controller;
 
 import com.quizapp.user_auth_service.dto.request.AuthRequest;
 import com.quizapp.user_auth_service.dto.request.IntrospectRequest;
+import com.quizapp.user_auth_service.dto.request.ForgotPasswordRequest;
 import com.quizapp.user_auth_service.dto.request.LogoutRequest;
 import com.quizapp.user_auth_service.dto.request.RefreshToken;
 import com.quizapp.user_auth_service.dto.response.ApiResponse;
 import com.quizapp.user_auth_service.dto.response.AuthResponse;
 import com.quizapp.user_auth_service.dto.response.IntrospectResponse;
 import com.quizapp.user_auth_service.service.impl.AuthenticationServiceImpl;
+import com.quizapp.user_auth_service.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthenticationController {
     
     private final AuthenticationServiceImpl authenticationService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@RequestBody @Valid AuthRequest authRequest) {
@@ -78,6 +81,26 @@ public class AuthenticationController {
                 .status(HttpStatus.OK.value())
                 .message("Token introspection completed")
                 .data(introspectResponse)
+                .build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<Void> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        log.info("Forgot password request for email={}", request.getEmail());
+        passwordResetService.requestPasswordReset(request);
+        return ApiResponse.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("Password reset email queued")
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<Void> resetPassword(@RequestBody @Valid com.quizapp.user_auth_service.dto.request.ResetPasswordRequest request) {
+        log.info("Reset password request with token");
+        passwordResetService.resetPassword(request);
+        return ApiResponse.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("Password reset successful")
                 .build();
     }
 

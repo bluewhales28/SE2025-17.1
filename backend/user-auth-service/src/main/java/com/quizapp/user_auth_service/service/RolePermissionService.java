@@ -4,7 +4,6 @@ import com.quizapp.user_auth_service.untils.Permission;
 import com.quizapp.user_auth_service.untils.Role;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +16,11 @@ public class RolePermissionService {
         Role.USER, Set.of(
             Permission.USER_READ,
             Permission.QUIZ_READ
+        ),
+        Role.TEACHER, Set.of(
+            Permission.USER_READ,
+            Permission.QUIZ_READ,
+            Permission.QUIZ_WRITE
         ),
         Role.ADMIN, Set.of(
             Permission.USER_READ,
