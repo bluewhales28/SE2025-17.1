@@ -9,7 +9,7 @@
 ## Database Setup
 
 Database and tables will be created automatically when the service starts (Hibernate ddl-auto: update).
-
+ddd
 ## API Endpoints Testing
 
 ### 1. Register a New User
