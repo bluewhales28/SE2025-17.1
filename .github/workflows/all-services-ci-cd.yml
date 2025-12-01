@@ -1,0 +1,103 @@
+name: All Services CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    name: Detect Service Changes
+    runs-on: ubuntu-latest
+    outputs:
+      auth: ${{ steps.filter.outputs.auth }}
+      quiz: ${{ steps.filter.outputs.quiz }}
+      submission: ${{ steps.filter.outputs.submission }}
+      analytics: ${{ steps.filter.outputs.analytics }}
+      notification: ${{ steps.filter.outputs.notification }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for service changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            auth:
+              - 'auth-service/**'
+            quiz:
+              - 'quiz-service/**'
+            submission:
+              - 'submission-service/**'
+            analytics:
+              - 'analytics-service/**'
+            notification:
+              - 'notification-service/**'
+
+  trigger-auth-service:
+    name: Trigger Auth Service CI/CD
+    needs: detect-changes
+    if: needs.detect-changes.outputs.auth == 'true'
+    uses: ./.github/workflows/auth-service-ci-cd.yml
+    secrets: inherit
+
+  trigger-quiz-service:
+    name: Trigger Quiz Service CI/CD
+    needs: detect-changes
+    if: needs.detect-changes.outputs.quiz == 'true'
+    uses: ./.github/workflows/quiz-service-ci-cd.yml
+    secrets: inherit
+
+  trigger-submission-service:
+    name: Trigger Submission Service CI/CD
+    needs: detect-changes
+    if: needs.detect-changes.outputs.submission == 'true'
+    uses: ./.github/workflows/submission-service-ci-cd.yml
+    secrets: inherit
+
+  trigger-analytics-service:
+    name: Trigger Analytics Service CI/CD
+    needs: detect-changes
+    if: needs.detect-changes.outputs.analytics == 'true'
+    uses: ./.github/workflows/analytics-service-ci-cd.yml
+    secrets: inherit
+
+  trigger-notification-service:
+    name: Trigger Notification Service CI/CD
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification == 'true'
+    uses: ./.github/workflows/notification-service-ci-cd.yml
+    secrets: inherit
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: 
+      - trigger-auth-service
+      - trigger-quiz-service
+      - trigger-submission-service
+      - trigger-analytics-service
+      - trigger-notification-service
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "## CI/CD Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Auth Service | ${{ needs.trigger-auth-service.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quiz Service | ${{ needs.trigger-quiz-service.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Submission Service | ${{ needs.trigger-submission-service.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Analytics Service | ${{ needs.trigger-analytics-service.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notification Service | ${{ needs.trigger-notification-service.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+
+
+
