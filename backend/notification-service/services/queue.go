@@ -49,6 +49,36 @@ func NewConsumer(amqpURL, queueName string, db *gorm.DB) (*Consumer, error) {
 		return nil, fmt.Errorf("failed to declare queue: %w", err)
 	}
 
+	// Khai báo exchange
+	err = ch.ExchangeDeclare(
+		"notification-exchange", // tên
+		"topic",                 // loại (topic hỗ trợ wildcard routing)
+		true,                    // bền vững
+		false,                   // autoDelete
+		false,                   // internal
+		false,                   // noWait
+		nil,                     // tham số
+	)
+	if err != nil {
+		ch.Close()
+		conn.Close()
+		return nil, fmt.Errorf("failed to declare exchange: %w", err)
+	}
+
+	// Bind queue với exchange
+	err = ch.QueueBind(
+		queueName,               // queue name
+		"notification.#",        // routing key (wildcard để nhận tất cả notification.*)
+		"notification-exchange", // exchange name
+		false,                   // noWait
+		nil,                     // tham số
+	)
+	if err != nil {
+		ch.Close()
+		conn.Close()
+		return nil, fmt.Errorf("failed to bind queue: %w", err)
+	}
+
 	return &Consumer{
 		connection: conn,
 		channel:    ch,

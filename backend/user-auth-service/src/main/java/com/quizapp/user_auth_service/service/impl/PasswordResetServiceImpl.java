@@ -56,14 +56,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 				.build();
 		tokenRepository.save(resetToken);
 
-		EmailEvent event = EmailEvent.builder()
-				.email(user.getEmail())
-				.type("PASSWORD_RESET")
-				.subject("Password Reset Request - Quiz App")
-				.token(token)
-				.frontendUrl(frontendUrl + "/reset-password?token=" + token)
-				.userId(user.getId())
-				.build();
+		EmailEvent event = EmailEvent.create(
+				"password_reset",
+				user.getId(),
+				user.getEmail(),
+				"Password Reset Request - Quiz App",
+				token,
+				frontendUrl + "/reset-password?token=" + token,
+				user.getFullName()
+		);
 		emailQueueProducer.publishEmailEvent(event);
 
 		log.info("Password reset token generated for userId={}, expiresAt={}", user.getId(), expiresAt);
