@@ -43,13 +43,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 	@Override
     public void requestPasswordReset(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElse(null);
-
-        // Không tiết lộ email có tồn tại hay không để tránh user enumeration
-        if (user == null) {
-            log.info("Password reset requested for non-existing email={}, returning 200", request.getEmail());
-            return;
-        }
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
 		String token = UUID.randomUUID().toString();
 		Instant expiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
