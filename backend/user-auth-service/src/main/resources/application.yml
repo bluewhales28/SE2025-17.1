@@ -2,9 +2,9 @@ spring:
   application:
     name: user-auth-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/quizz
+    url: jdbc:postgresql://postgres:5432/quizz
     username: postgres
-    password: 123456
+    password: password
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -16,10 +16,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   rabbitmq:
-    host: localhost
+    host: rabbitmq
     port: 5672
     username: guest
     password: guest
+
+server:
+  port: 8082
+
 app:
   jwt:
     secret: 5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b

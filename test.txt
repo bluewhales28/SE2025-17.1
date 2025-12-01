@@ -1,35 +1,39 @@
-5.NOTIFICATION SERVICE
-Gửi email, thông báo trong app, push notifications.
+2. Quiz Service
+Toàn bộ logic về quiz, câu hỏi, attempt, scoring.
 Tính năng (Features)
-Hệ thống thông báo 
-Mỗi sự kiện (event) được ánh xạ với một template tương ứng (ví dụ: “quiz_assigned”, “reset_password”, “badge_earned”…).
-
-
-Nhận sự kiện từ các service khác 
-Message Queue Consumer lắng nghe sự kiện từ RabbitMQ 
-Tự động xử lý sự kiện và gửi thông báo tương ứng.
-Gửi Email (Email Notification)
-Sử dụng hệ thống email template động:
-Template lưu trong DB (templates table) hoặc trong file system.
-Có thể render template bằng HTML + Go template engine.
-Gửi qua SMTP / SendGrid / Mailgun (configurable).
-Hỗ trợ gửi hàng loạt (batch send) qua worker.
-Cấu hình & Tùy chọn người dùng
-Lưu thông báo trong DB (notifications table) với trạng thái: unread / read / archived
-Hỗ trợ real-time update (qua WebSocket hoặc SSE).
-Có thể nhóm thông báo cùng loại để hiển thị gọn gàng
-Worker & Queue Processing
-Hàng loạt thông báo được xử lý trong background worker.
-Worker đọc từ hàng đợi (queue) và gửi song song nhiều kênh.
-Có cơ chế batch sending, requeue on failure, và throughput benchmark.
-Hỗ trợ cấu hình concurrency để tối ưu hiệu năng gửi (ví dụ: 50 worker / 1 consumer group).
-Cơ sở dữ liệu (DB Schema)
-notifications
-(id, user_id, type, title, content, channel, is_read, created_at, metadata_json)
-preferences
-(id, user_id, channel, enabled, frequency, updated_at)
-templates
-(id, name, subject, body_html, body_text, channel, created_at, updated_at)
-Kiểm thử & Benchmark
-Unit test cho các module: email rendering, queue consumer, push handler.
-Integration test với RabbitMQ và FCM (mock).
+Quản lý Quiz (Quiz Management)
+Tạo, chỉnh sửa, xem chi tiết và xóa quiz (CRUD API).
+Cấu hình thời gian làm bài, điểm tổng, số lần làm lại, chế độ public/private.
+Hỗ trợ tag, chủ đề (topic) và độ khó (difficulty) cho quiz.
+Tự động tính tổng điểm và lưu thông tin người tạo quiz.
+Quản lý Câu hỏi (Question Management)
+Thêm, sửa, xóa và lấy danh sách câu hỏi thuộc quiz.
+Hỗ trợ nhiều loại câu hỏi
+Mỗi câu hỏi có thể gắn tag, độ khó và điểm riêng.
+Cho phép tái sử dụng câu hỏi từ Question Bank.
+Làm bài & Chấm điểm (Attempt & Scoring)
+Người dùng bắt đầu attempt: tạo bài làm mới từ quiz.
+Gửi và cập nhật câu trả lời trong quá trình làm (autosave).
+Nộp bài và chấm điểm tự động cho câu hỏi khách quan.
+Hỗ trợ essay/manual grading cho câu hỏi tự luận.
+Xem lại kết quả chi tiết, điểm số, thời gian, feedback.
+Lưu tạm & Tiếp tục làm bài (Autosave / Resume)
+Dùng Redis cache để lưu tạm tiến độ làm bài.
+Cho phép khôi phục (resume) khi bị ngắt kết nối hoặc thoát giữa chừng.
+Dữ liệu tự động đồng bộ lại vào DB khi nộp bài thành công.
+Logic nâng cao (Quiz Logic)
+Shuffle (xáo trộn) thứ tự câu hỏi và đáp án cho mỗi attempt.
+Lưu seed shuffle để đảm bảo tính nhất quán khi xem lại.
+Hỗ trợ chế độ Adaptive Mode (v2): tự động điều chỉnh độ khó dựa trên kết quả trước đó.
+Tích hợp & Gửi sự kiện (Integration)
+Gửi event kết quả quiz đến Analytics Service sau khi nộp bài.
+Tích hợp với Notification Service (qua RabbitMQ) để gửi thông báo hoặc email.
+Cấu trúc event thống nhất (quiz_submitted, quiz_graded, quiz_reviewed).
+Kiểm tra & Bảo mật
+Kiểm tra quyền truy cập (RBAC) — chỉ người được phép mới được làm quiz hoặc chỉnh sửa.
+Validate dữ liệu đầu vào (quiz, câu hỏi, câu trả lời).
+Giới hạn số lần làm lại, thời gian làm, và rate-limit API.
+ Kiểm thử (Testing)
+Unit test cho logic chấm điểm, shuffle, adaptive mode.
+Integration test với DB, Redis, và RabbitMQ.
+Mức bao phủ test ≥ 80% cho core logic.

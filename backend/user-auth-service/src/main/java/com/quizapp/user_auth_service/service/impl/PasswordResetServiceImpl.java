@@ -15,10 +15,16 @@ import com.quizapp.user_auth_service.service.PasswordService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -37,13 +43,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 	@Override
     public void requestPasswordReset(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElse(null);
-
-        // Không tiết lộ email có tồn tại hay không để tránh user enumeration
-        if (user == null) {
-            log.info("Password reset requested for non-existing email={}, returning 200", request.getEmail());
-            return;
-        }
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
 		String token = UUID.randomUUID().toString();
 		Instant expiresAt = Instant.now().plus(1, ChronoUnit.HOURS);
@@ -56,14 +56,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 				.build();
 		tokenRepository.save(resetToken);
 
-		EmailEvent event = EmailEvent.builder()
-				.email(user.getEmail())
-				.type("PASSWORD_RESET")
-				.subject("Password Reset Request - Quiz App")
-				.token(token)
-				.frontendUrl(frontendUrl + "/reset-password?token=" + token)
-				.userId(user.getId())
-				.build();
+		EmailEvent event = EmailEvent.create(
+				"password_reset",
+				user.getId(),
+				user.getEmail(),
+				"Password Reset Request - Quiz App",
+				token,
+				frontendUrl + "/reset-password?token=" + token,
+				user.getFullName()
+		);
 		emailQueueProducer.publishEmailEvent(event);
 
 		log.info("Password reset token generated for userId={}, expiresAt={}", user.getId(), expiresAt);

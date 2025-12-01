@@ -1,13 +1,18 @@
-# Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9.9-eclipse-temurin-17 AS builder
 WORKDIR /app
+
 COPY pom.xml .
 COPY src ./src
+
 RUN mvn clean package -DskipTests
 
-# Run stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+COPY --from=builder /app/target/user-auth-service-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8082
+
+ENV SPRING_PROFILES_ACTIVE=default
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

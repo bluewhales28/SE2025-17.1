@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7e324158-eb21-4556-945e-6275903f3082" name="Changes" comment="" />
+    <list default="true" id="7e324158-eb21-4556-945e-6275903f3082" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/user-auth-service/src/main/java/com/quizapp/user_auth_service/service/impl/PasswordResetServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/user-auth-service/src/main/java/com/quizapp/user_auth_service/service/impl/PasswordResetServiceImpl.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -38,7 +41,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/long/23-user-auth-service/update",
+    "git-widget-placeholder": "feature/long/user-auth-service/noti",
     "junie.onboarding.icon.badge.shown": "true",
     "last_opened_file_path": "C:/Users/ASUS/Downloads/SE2025-17.1",
     "node.js.detected.package.eslint": "true",
