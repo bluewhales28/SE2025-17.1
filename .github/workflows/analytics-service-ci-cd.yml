@@ -7,14 +7,14 @@ on:
       - dev
       - 'feature/**'
     paths:
-      - 'analytics-service/**'
+      - 'backend/analytics-statistic-service/**'
       - '.github/workflows/analytics-service-ci-cd.yml'
   pull_request:
     branches:
       - main
       - dev
     paths:
-      - 'analytics-service/**'
+      - 'backend/analytics-statistic-service/**'
 
 env:
   REGISTRY: ghcr.io
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./analytics-service
+        working-directory: ./backend/analytics-statistic-service
 
     steps:
       - name: Checkout code
@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: analytics-service/requirements.txt
+          cache-dependency-path: backend/analytics-statistic-service/requirements.txt
 
       - name: Install dependencies
         run: |
@@ -67,7 +67,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./analytics-service/coverage.xml
+          file: ./backend/analytics-statistic-service/coverage.xml
           flags: analytics-service
           name: analytics-service-coverage
 
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./analytics-service
+        working-directory: ./backend/analytics-statistic-service
 
     steps:
       - name: Checkout code
@@ -139,8 +139,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./analytics-service
-          file: ./analytics-service/Dockerfile
+          context: ./backend/analytics-statistic-service
+          file: ./backend/analytics-statistic-service/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
