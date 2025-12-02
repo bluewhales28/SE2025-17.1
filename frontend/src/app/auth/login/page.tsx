@@ -132,7 +132,7 @@ export default function LoginPage() {
 
                             <div className="flex justify-end">
                                 <Link
-                                    href="/forgot-password"
+                                    href="/auth/forgot-password"
                                     className="text-base font-medium text-[#6B59CE] hover:underline"
                                 >
                                     Quên mật khẩu
