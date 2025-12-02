@@ -18,9 +18,19 @@ public class SecurityConfig {
         "/auth/logout",
         "/auth/refresh",
         "/auth/forgot-password",
+        "/auth/reset-password"
+    };
+    
+    private final String[] PUBLIC_POST_URL = {
+        "/auth/login",
+        "/auth/introspect",
+        "/auth/logout",
+        "/auth/refresh",
+        "/auth/forgot-password",
         "/auth/reset-password",
         "/users"
     };
+    
     private final CustomJwtDecoder jwtDecoder;
 
     @Bean
@@ -29,7 +39,7 @@ public class SecurityConfig {
                 .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers(HttpMethod.POST, PUBLIC_URL).permitAll()
+                                .requestMatchers(HttpMethod.POST, PUBLIC_POST_URL).permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority("SCOPE_user:read")
                                 .requestMatchers(HttpMethod.GET, "/users/all").hasAnyAuthority("SCOPE_admin:read")

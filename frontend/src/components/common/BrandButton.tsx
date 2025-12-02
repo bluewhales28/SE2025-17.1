@@ -1,8 +1,8 @@
 import React from "react";
-import { Button, ButtonProps } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface BrandButtonProps extends ButtonProps {
+interface BrandButtonProps extends React.ComponentPropsWithRef<typeof Button> {
     fullRounded?: boolean;
 }
 
