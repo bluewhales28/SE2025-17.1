@@ -1,5 +1,6 @@
 package com.quizapp.user_auth_service.service.impl;
 
+import com.quizapp.user_auth_service.dto.event.EmailEvent;
 import com.quizapp.user_auth_service.dto.request.UpdateUserRequest;
 import com.quizapp.user_auth_service.dto.request.UserRequest;
 import com.quizapp.user_auth_service.dto.response.PageResponse;
@@ -8,11 +9,13 @@ import com.quizapp.user_auth_service.exception.AppException;
 import com.quizapp.user_auth_service.exception.ErrorCode;
 import com.quizapp.user_auth_service.mapper.UserMapper;
 import com.quizapp.user_auth_service.model.User;
+import com.quizapp.user_auth_service.queue.EmailQueueProducer;
 import com.quizapp.user_auth_service.repository.UserRepository;
 import com.quizapp.user_auth_service.service.PasswordService;
 import com.quizapp.user_auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,10 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordService passwordService;
+    private final EmailQueueProducer emailQueueProducer;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Override
     public PageResponse<?> findByFullName(String fullName, int page, int size) {
@@ -57,7 +64,23 @@ public class UserServiceImpl implements UserService {
         
         try {
             user = userRepository.save(user);
+            
+            // Send welcome email after successful registration
+            log.info("Sending welcome email to new user: {}", user.getEmail());
+            EmailEvent welcomeEvent = EmailEvent.create(
+                "user_registered",
+                user.getId(),
+                user.getEmail(),
+                "Welcome to Quiz App!",
+                null,
+                frontendUrl,
+                user.getFullName()
+            );
+            emailQueueProducer.publishEmailEvent(welcomeEvent);
+            log.info("Welcome email event published for user: {}", user.getEmail());
+            
         } catch (Exception e) {
+            log.error("Error saving user or sending email: ", e);
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 

@@ -1,7 +1,7 @@
 import { ApiResponse, AuthRequest, AuthResponse, RegisterRequest } from "@/types/auth";
 
-const AUTH_API_URL = "http://localhost:8082/auth";
-const USER_API_URL = "http://localhost:8082/users";
+const AUTH_API_URL = "/api/v1/auth";
+const USER_API_URL = "/api/v1/users";
 
 export const authService = {
     async login(data: AuthRequest): Promise<ApiResponse<AuthResponse>> {
