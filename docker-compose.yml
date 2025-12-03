@@ -61,7 +61,7 @@ services:
       DB_PORT: 5432
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      DB_NAME: notification_db
+      DB_NAME: quizz
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
       PORT: 8080
       SMTP_USER: ${SMTP_USER}

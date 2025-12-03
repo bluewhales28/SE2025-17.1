@@ -101,7 +101,7 @@ type Template struct {
 
 // TableName thiết lập tên bảng cho mô hình Template.
 func (Template) TableName() string {
-	return "templates"
+	return "email_templates"
 }
 
 // Event đại diện cho một sự kiện từ các dịch vụ khác kích hoạt thông báo.
