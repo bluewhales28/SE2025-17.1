@@ -39,4 +39,40 @@ export const authService = {
 
         return result;
     },
+
+    async forgotPassword(email: string): Promise<ApiResponse<any>> {
+        const response = await fetch(`${AUTH_API_URL}/forgot-password`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Gửi yêu cầu thất bại");
+        }
+
+        return result;
+    },
+
+    async resetPassword(token: string, newPassword: string): Promise<ApiResponse<any>> {
+        const response = await fetch(`${AUTH_API_URL}/reset-password`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token, newPassword }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || "Đặt lại mật khẩu thất bại");
+        }
+
+        return result;
+    },
 };
