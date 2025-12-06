@@ -7,6 +7,7 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,7 +46,7 @@ export default function ForgotPasswordPage() {
             await authService.forgotPassword(values.email)
             setSuccess(true)
         } catch (err: any) {
-            setGlobalError(err.message || "Gửi yêu cầu thất bại")
+            toast.error(err.message || "Gửi yêu cầu thất bại")
         } finally {
             setIsLoading(false)
         }
