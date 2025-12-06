@@ -1,6 +1,10 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface FeatureCardProps {
     title: string;
@@ -19,6 +23,21 @@ export function FeatureCard({
     colorClass,
     className,
 }: FeatureCardProps) {
+    const router = useRouter();
+
+    const handleClick = () => {
+        // Kiểm tra xem user đã đăng nhập chưa
+        const token = Cookies.get("accessToken") || localStorage.getItem("accessToken");
+
+        if (token) {
+            // Đã đăng nhập -> chuyển về dashboard
+            router.push("/dashboard");
+        } else {
+            // Chưa đăng nhập -> chuyển về trang đăng nhập
+            router.push("/auth/login");
+        }
+    };
+
     return (
         <div
             className={cn(
@@ -52,7 +71,10 @@ export function FeatureCard({
                     {description}
                 </p>
             </div>
-            <Button className="bg-[#0A092D] text-white hover:bg-[#0A092D]/90 rounded-full px-8 py-6 font-bold text-lg w-full transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-indigo-500/25">
+            <Button
+                onClick={handleClick}
+                className="bg-[#0A092D] text-white hover:bg-[#0A092D]/90 rounded-full px-8 py-6 font-bold text-lg w-full transition-all hover:scale-105 active:scale-95 shadow-lg hover:shadow-indigo-500/25"
+            >
                 {buttonText}
             </Button>
         </div>

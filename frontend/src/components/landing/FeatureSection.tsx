@@ -1,3 +1,5 @@
+"use client"
+
 import { FeatureCard } from "./FeatureCard";
 import { SectionWrapper } from "@/components/common/SectionWrapper";
 import { FadeIn } from "@/components/animations/FadeIn";
