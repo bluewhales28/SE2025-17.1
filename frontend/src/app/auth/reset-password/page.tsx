@@ -8,6 +8,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -65,10 +66,10 @@ function ResetPasswordForm() {
         setIsLoading(true)
         try {
             await authService.resetPassword(token, values.password)
-            alert("Đặt lại mật khẩu thành công!")
+            toast.success("Đặt lại mật khẩu thành công!")
             router.push("/auth/login")
         } catch (err: any) {
-            setGlobalError(err.message || "Đặt lại mật khẩu thất bại")
+            toast.error(err.message || "Đặt lại mật khẩu thất bại")
         } finally {
             setIsLoading(false)
         }

@@ -24,7 +24,7 @@ public class UserRequest implements Serializable {
 
     @NotBlank(message = "password must not blank")
     @Size(min = 6, message = "password should have at least 6 characters")
-    private String passwordHash;
+    private String password;
 
     @NotBlank(message = "full name must not blank")
     private String fullName;

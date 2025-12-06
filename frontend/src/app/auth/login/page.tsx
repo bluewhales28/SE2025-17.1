@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,14 +41,14 @@ export default function LoginPage() {
         try {
             await login({
                 email: values.email,
-                passwordHash: values.password
+                password: values.password
             })
 
-            alert("Đăng nhập thành công!")
-            router.push("/")
+            toast.success("Đăng nhập thành công!")
+            router.push("/dashboard")
 
         } catch (err: any) {
-            setGlobalError(err.message || "Đăng nhập thất bại")
+            toast.error(err.message || "Đăng nhập thất bại")
         }
     }
 

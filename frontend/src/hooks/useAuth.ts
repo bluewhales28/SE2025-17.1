@@ -41,10 +41,24 @@ export const useAuth = () => {
         }
     };
 
-    const logout = () => {
-        Cookies.remove("accessToken");
-        localStorage.removeItem("accessToken");
-        window.location.href = "/auth/login";
+    const logout = async () => {
+        setIsLoading(true);
+        try {
+            const token = Cookies.get("accessToken") || localStorage.getItem("accessToken");
+            if (token) {
+                // Call API logout để invalidate token ở server
+                await authService.logout(token);
+            }
+        } catch (err: any) {
+            console.error("Logout API error:", err);
+            // Vẫn tiếp tục logout ở client dù API fail
+        } finally {
+            // Xóa token ở client
+            Cookies.remove("accessToken");
+            localStorage.removeItem("accessToken");
+            setIsLoading(false);
+            window.location.href = "/";
+        }
     };
 
     return {
