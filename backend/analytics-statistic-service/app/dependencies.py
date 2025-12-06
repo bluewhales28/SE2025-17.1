@@ -1,9 +1,13 @@
 """
 Dependency injection for Analytics Service
 """
+
 from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
 from redis import asyncio as aioredis
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
+
 from app.config import settings
 
 # Database engine
@@ -43,9 +47,7 @@ async def get_redis():
     global redis_pool
     if redis_pool is None:
         redis_pool = await aioredis.from_url(
-            settings.redis_url,
-            encoding="utf-8",
-            decode_responses=True
+            settings.redis_url, encoding="utf-8", decode_responses=True
         )
     return redis_pool
 
@@ -56,5 +58,3 @@ async def close_redis():
     if redis_pool:
         await redis_pool.close()
         redis_pool = None
-
-

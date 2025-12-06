@@ -1,15 +1,10 @@
 """
 Models package initialization
 """
+
+from app.models.analytics import (AlertEvent, AnalyticsCache, Certificate,
+                                  Report, ReportType, SeverityLevel)
 from app.models.base import Base, BaseModel
-from app.models.analytics import (
-    AnalyticsCache,
-    Report,
-    AlertEvent,
-    Certificate,
-    SeverityLevel,
-    ReportType
-)
 
 __all__ = [
     "Base",
@@ -21,5 +16,3 @@ __all__ = [
     "SeverityLevel",
     "ReportType",
 ]
-
-

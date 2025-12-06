@@ -1,9 +1,10 @@
 """
 Integration tests for API endpoints
 """
+
 import pytest
-from httpx import AsyncClient
 from fastapi import status
+from httpx import AsyncClient
 
 from app.main import app
 
@@ -47,5 +48,3 @@ async def test_export_csv_missing_params(client):
     """Test CSV export with missing parameters"""
     response = await client.get("/api/v1/export/csv")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-

@@ -10,7 +10,7 @@ DEFAULT_TEMPLATE = {
     "title_color": "#2C3E50",
     "name_color": "#3498DB",
     "border_color": "#ECF0F1",
-    "signature_position": "bottom_right"
+    "signature_position": "bottom_right",
 }
 
 MODERN_TEMPLATE = {
@@ -21,7 +21,7 @@ MODERN_TEMPLATE = {
     "title_color": "#1ABC9C",
     "name_color": "#2C3E50",
     "border_color": "#16A085",
-    "signature_position": "bottom_center"
+    "signature_position": "bottom_center",
 }
 
 CLASSIC_TEMPLATE = {
@@ -32,18 +32,16 @@ CLASSIC_TEMPLATE = {
     "title_color": "#8B4513",
     "name_color": "#000000",
     "border_color": "#D2691E",
-    "signature_position": "bottom_left"
+    "signature_position": "bottom_left",
 }
 
 TEMPLATES = {
     "default": DEFAULT_TEMPLATE,
     "modern": MODERN_TEMPLATE,
-    "classic": CLASSIC_TEMPLATE
+    "classic": CLASSIC_TEMPLATE,
 }
 
 
 def get_template(template_name: str = "default"):
     """Get certificate template configuration"""
     return TEMPLATES.get(template_name, DEFAULT_TEMPLATE)
-
-

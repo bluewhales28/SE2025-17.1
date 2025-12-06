@@ -1,21 +1,23 @@
 """
 Analytics Service - FastAPI Application Entry Point
 """
+
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
 
+from app.api import export, reports
 from app.config import settings
 from app.dependencies import close_redis
-from app.api import reports, export
 from app.middleware.auth import AuthMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
 
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.log_level),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -62,26 +64,17 @@ async def root():
     return {
         "service": settings.app_name,
         "version": settings.app_version,
-        "status": "running"
+        "status": "running",
     }
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": settings.app_name
-    }
+    return {"status": "healthy", "service": settings.app_name}
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8004,
-        reload=settings.debug
-    )
 
-
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=settings.debug)

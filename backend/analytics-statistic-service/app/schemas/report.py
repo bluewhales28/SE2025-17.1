@@ -1,14 +1,17 @@
 """
 Pydantic schemas for reports and analytics
 """
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ReportType(str, Enum):
     """Report types"""
+
     QUIZ = "quiz"
     STUDENT = "student"
     CLASS = "class"
@@ -17,6 +20,7 @@ class ReportType(str, Enum):
 
 class StatisticsData(BaseModel):
     """Basic statistics data"""
+
     mean: float
     median: float
     std_dev: float
@@ -30,6 +34,7 @@ class StatisticsData(BaseModel):
 
 class QuizReportResponse(BaseModel):
     """Quiz report response schema"""
+
     quiz_id: int
     quiz_title: str
     total_attempts: int
@@ -41,13 +46,14 @@ class QuizReportResponse(BaseModel):
     score_distribution: Dict[str, int]
     difficulty_analysis: Dict[str, Any]
     topic_analysis: Optional[Dict[str, Any]] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class StudentProgressResponse(BaseModel):
     """Student progress response schema"""
+
     student_id: int
     student_name: str
     total_quizzes_attempted: int
@@ -62,13 +68,14 @@ class StudentProgressResponse(BaseModel):
     weaknesses: List[str]
     topic_performance: Dict[str, Dict[str, float]]
     recent_attempts: List[Dict[str, Any]]
-    
+
     class Config:
         from_attributes = True
 
 
 class LeaderboardEntry(BaseModel):
     """Leaderboard entry"""
+
     student_id: int
     student_name: str
     score: float
@@ -78,6 +85,7 @@ class LeaderboardEntry(BaseModel):
 
 class ClassStatisticsResponse(BaseModel):
     """Class statistics response schema"""
+
     class_id: int
     class_name: str
     total_students: int
@@ -92,13 +100,14 @@ class ClassStatisticsResponse(BaseModel):
     activity_timeline: List[Dict[str, Any]]
     top_performers: List[Dict[str, Any]]
     struggling_students: List[Dict[str, Any]]
-    
+
     class Config:
         from_attributes = True
 
 
 class QuestionAnalysisResponse(BaseModel):
     """Question analysis response schema"""
+
     question_id: int
     question_text: str
     question_type: str
@@ -113,25 +122,27 @@ class QuestionAnalysisResponse(BaseModel):
     common_mistakes: List[str]
     topic: Optional[str] = None
     difficulty_level: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class ExportRequest(BaseModel):
     """Export request schema"""
+
     report_type: ReportType
     entity_id: int
     format: str = Field(default="pdf", pattern="^(pdf|csv)$")
     include_charts: bool = True
     date_range: Optional[Dict[str, str]] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class CertificateRequest(BaseModel):
     """Certificate generation request"""
+
     student_id: int
     quiz_id: Optional[int] = None
     class_id: Optional[int] = None
@@ -141,25 +152,27 @@ class CertificateRequest(BaseModel):
     completion_date: datetime
     template_name: Optional[str] = "default"
     custom_data: Optional[Dict[str, Any]] = None
-    
+
     class Config:
         from_attributes = True
 
 
 class CertificateResponse(BaseModel):
     """Certificate response schema"""
+
     certificate_id: int
     certificate_number: str
     student_id: int
     pdf_path: str
     issued_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class AlertEventResponse(BaseModel):
     """Alert event response schema"""
+
     alert_id: int
     type: str
     severity: str
@@ -171,8 +184,6 @@ class AlertEventResponse(BaseModel):
     data: Dict[str, Any]
     resolved: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
-
-
