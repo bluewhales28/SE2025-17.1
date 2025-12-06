@@ -77,5 +77,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    # nosec B104 - Binding to 0.0.0.0 is required for Docker containers
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=settings.debug)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8004, reload=settings.debug)  # nosec B104
