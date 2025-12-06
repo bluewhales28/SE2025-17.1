@@ -58,14 +58,15 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toUser(userRequest);
         // Hash the password before saving
-        user.setPasswordHash(passwordService.hashPassword(userRequest.getPasswordHash()));
+        user.setPasswordHash(passwordService.hashPassword(userRequest.getPassword()));
         // Email is always verified when creating new user
         user.setEmailVerified(true);
         
+        // Save user
+        user = userRepository.save(user);
+        
+        // Send welcome email after successful registration (best effort - don't fail registration if email fails)
         try {
-            user = userRepository.save(user);
-            
-            // Send welcome email after successful registration
             log.info("Sending welcome email to new user: {}", user.getEmail());
             EmailEvent welcomeEvent = EmailEvent.create(
                 "user_registered",
@@ -78,10 +79,9 @@ public class UserServiceImpl implements UserService {
             );
             emailQueueProducer.publishEmailEvent(welcomeEvent);
             log.info("Welcome email event published for user: {}", user.getEmail());
-            
         } catch (Exception e) {
-            log.error("Error saving user or sending email: ", e);
-            throw new AppException(ErrorCode.USER_EXISTED);
+            // Log error but don't fail the registration
+            log.error("Failed to send welcome email for user {}, but registration succeeded: {}", user.getEmail(), e.getMessage());
         }
 
         return userMapper.toUserReponse(user);
@@ -95,8 +95,8 @@ public class UserServiceImpl implements UserService {
         user.setFullName(updateUserRequest.getFullName());
         user.setEmail(updateUserRequest.getEmail());
         // Hash the password if it's being updated
-        if (updateUserRequest.getPasswordHash() != null && !updateUserRequest.getPasswordHash().isEmpty()) {
-            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPasswordHash()));
+        if (updateUserRequest.getPassword() != null && !updateUserRequest.getPassword().isEmpty()) {
+            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPassword()));
         }
         user.setPhoneNumber(updateUserRequest.getPhoneNumber());
         user.setDateOfBirth(updateUserRequest.getDateOfBirth());
@@ -142,8 +142,8 @@ public class UserServiceImpl implements UserService {
         user.setDateOfBirth(updateUserRequest.getDateOfBirth());
         
         // Hash the password if it's being updated
-        if (updateUserRequest.getPasswordHash() != null && !updateUserRequest.getPasswordHash().isEmpty()) {
-            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPasswordHash()));
+        if (updateUserRequest.getPassword() != null && !updateUserRequest.getPassword().isEmpty()) {
+            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPassword()));
         }
         
         user = userRepository.save(user);

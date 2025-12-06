@@ -62,7 +62,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 				user.getEmail(),
 				"Password Reset Request - Quiz App",
 				token,
-				frontendUrl + "/reset-password?token=" + token,
+				frontendUrl + "/auth/reset-password?token=" + token,
 				user.getFullName()
 		);
 		emailQueueProducer.publishEmailEvent(event);

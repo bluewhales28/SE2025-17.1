@@ -13,5 +13,5 @@ public class AuthRequest {
 
 
     private  String email;
-    private String passwordHash;
+    private String password;
 }
