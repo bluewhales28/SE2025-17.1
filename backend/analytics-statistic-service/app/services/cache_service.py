@@ -37,7 +37,7 @@ class CacheService:
 
         # Hash for long keys
         if len(key_data) > 200:
-            hash_suffix = hashlib.md5(key_data.encode()).hexdigest()[:10]
+            hash_suffix = hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()[:10]
             return f"{prefix}:{hash_suffix}"
 
         return key_data

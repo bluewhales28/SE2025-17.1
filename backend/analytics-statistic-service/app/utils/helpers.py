@@ -20,7 +20,7 @@ def generate_certificate_number(student_id: int, quiz_id: int) -> str:
     """
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     data = f"{student_id}:{quiz_id}:{timestamp}"
-    hash_value = hashlib.md5(data.encode()).hexdigest()[:8].upper()
+    hash_value = hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()[:8].upper()
     return f"CERT-{timestamp}-{hash_value}"
 
 
