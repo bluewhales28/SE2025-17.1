@@ -1,11 +1,7 @@
-CREATE DATABASE quizz;
-CREATE DATABASE notification_db;
-CREATE DATABASE quiz_db;
-
--- Connect to quizz database and create email templates
+-- Email templates for notification service
 \c quizz
 
--- Insert email templates for notification service
+-- Insert email templates (skip if already exists)
 INSERT INTO email_templates (name, subject, body_html, body_text, channel) VALUES
 ('user_registered', 'Welcome to Quiz App', 
  '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><h1>Welcome to Quiz App</h1><p>Hello {{.user_name}},</p><p>Thank you for joining our community. We are excited to have you with us.</p><p>Best regards,<br>The Quiz App Team</p></div>', 
@@ -27,4 +23,3 @@ INSERT INTO email_templates (name, subject, body_html, body_text, channel) VALUE
  'Quiz result: {{.quiz_title}}. Score: {{.score}}/{{.max_score}}',
  'email')
 ON CONFLICT (name) DO NOTHING;
-

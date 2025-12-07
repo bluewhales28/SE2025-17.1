@@ -45,6 +45,7 @@ services:
       SPRING_DATA_REDIS_HOST: redis
       APP_NOTIFICATION_SERVICE_URL: http://notification-service:8080
       JWT_SECRET: ${JWT_SECRET}
+      APP_FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
     depends_on:
       postgres:
         condition: service_healthy
