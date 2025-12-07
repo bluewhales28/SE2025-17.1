@@ -1,22 +1,133 @@
+version: '3.8'
+
 services:
-  postgres:
+  # ============================================================
+  # DATABASES - Each service has its own database
+  # ============================================================
+
+  user-auth-db:
     image: postgres:15-alpine
-    container_name: postgres
+    container_name: user-auth-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: user_auth_db
+      POSTGRES_USER: ${AUTH_DB_USER:-auth_user}
+      POSTGRES_PASSWORD: ${AUTH_DB_PASSWORD:-auth_pass_secure_123}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d
+      - user_auth_data:/var/lib/postgresql/data
+      - ./backend/user-auth-service/schema:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${AUTH_DB_USER:-auth_user} -d user_auth_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  quiz-db:
+    image: postgres:15-alpine
+    container_name: quiz-db
+    environment:
+      POSTGRES_DB: quiz_db
+      POSTGRES_USER: ${QUIZ_DB_USER:-quiz_user}
+      POSTGRES_PASSWORD: ${QUIZ_DB_PASSWORD:-quiz_pass_secure_123}
+    volumes:
+      - quiz_data:/var/lib/postgresql/data
+      - ./backend/quiz-service/db:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${QUIZ_DB_USER:-quiz_user} -d quiz_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  class-db:
+    image: postgres:15-alpine
+    container_name: class-db
+    environment:
+      POSTGRES_DB: class_db
+      POSTGRES_USER: ${CLASS_DB_USER:-class_user}
+      POSTGRES_PASSWORD: ${CLASS_DB_PASSWORD:-class_pass_secure_123}
+    volumes:
+      - class_data:/var/lib/postgresql/data
+      - ./backend/class-assignment-service/schema:/docker-entrypoint-initdb.d
+    ports:
+      - "5434:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${CLASS_DB_USER:-class_user} -d class_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-db:
+    image: postgres:15-alpine
+    container_name: notification-db
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${NOTIF_DB_USER:-notif_user}
+      POSTGRES_PASSWORD: ${NOTIF_DB_PASSWORD:-notif_pass_secure_123}
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+      - ./backend/notification-service/schema:/docker-entrypoint-initdb.d
+    ports:
+      - "5435:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${NOTIF_DB_USER:-notif_user} -d notification_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  recommendation-db:
+    image: postgres:15-alpine
+    container_name: recommendation-db
+    environment:
+      POSTGRES_DB: recommendation_db
+      POSTGRES_USER: ${RECOMMENDATION_DB_USER:-recommendation_user}
+      POSTGRES_PASSWORD: ${RECOMMENDATION_DB_PASSWORD:-recommendation_pass_secure_123}
+    volumes:
+      - recommendation_data:/var/lib/postgresql/data
+      - ./backend/recommendation-service/schema:/docker-entrypoint-initdb.d
+    ports:
+      - "5436:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${RECOMMENDATION_DB_USER:-recommendation_user} -d recommendation_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  analytics-db:
+    image: postgres:15-alpine
+    container_name: analytics-db
+    environment:
+      POSTGRES_DB: analytics_db
+      POSTGRES_USER: ${ANALYTICS_DB_USER:-analytics_user}
+      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD:-analytics_pass_secure_123}
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+      - ./backend/analytics-statistic-service/schema:/docker-entrypoint-initdb.d
+    ports:
+      - "5437:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${ANALYTICS_DB_USER:-analytics_user} -d analytics_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # INFRASTRUCTURE SERVICES
+  # ============================================================
 
   redis:
     image: redis:alpine
@@ -25,100 +136,311 @@ services:
       - "6379:6379"
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ============================================================
+  # MICROSERVICES
+  # ============================================================
 
   user-auth-service:
     build: ./backend/user-auth-service
     container_name: user-auth-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-quizz}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      # Database connection
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-auth-db:5432/user_auth_db
+      SPRING_DATASOURCE_USERNAME: ${AUTH_DB_USER:-auth_user}
+      SPRING_DATASOURCE_PASSWORD: ${AUTH_DB_PASSWORD:-auth_pass_secure_123}
+
+      # Redis
       SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      JWT_EXPIRATION: 86400000
+
+      # RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-admin}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin123}
+
+      # Service URLs for inter-service communication
       APP_NOTIFICATION_SERVICE_URL: http://notification-service:8080
-      JWT_SECRET: ${JWT_SECRET}
-      APP_FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      APP_QUIZ_SERVICE_URL: http://quiz-service:8083
+      APP_CLASS_SERVICE_URL: http://class-assignment-service:8081
+      APP_FRONTEND_URL: http://localhost
+
+      # Server
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
     depends_on:
-      postgres:
+      user-auth-db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
 
   notification-service:
     build: ./backend/notification-service
     container_name: notification-service
     environment:
-      DB_HOST: postgres
+      # Database connection
+      DB_HOST: notification-db
       DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      DB_NAME: quizz
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
-      PORT: 8080
+      DB_USER: ${NOTIF_DB_USER:-notif_user}
+      DB_PASSWORD: ${NOTIF_DB_PASSWORD:-notif_pass_secure_123}
+      DB_NAME: notification_db
+
+      # RabbitMQ
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin123}@rabbitmq:5672/
+
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM:-noreply@quizapp.com}
+
+      # Service URLs for inter-service communication
+      AUTH_SERVICE_URL: http://user-auth-service:8080
+
+      # Server
+      PORT: 8082
+    ports:
+      - "8082:8082"
     depends_on:
-      postgres:
+      notification-db:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
 
   quiz-service:
     build: ./backend/quiz-service
     container_name: quiz-service
     environment:
-      DB_HOST: postgres
+      # Database connection
+      DB_HOST: quiz-db
       DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      DB_USER: ${QUIZ_DB_USER:-quiz_user}
+      DB_PASSWORD: ${QUIZ_DB_PASSWORD:-quiz_pass_secure_123}
       DB_NAME: quiz_db
+
+      # Service URLs for inter-service communication
+      AUTH_SERVICE_URL: http://user-auth-service:8080
+      NOTIFICATION_SERVICE_URL: http://notification-service:8082
+      ANALYTICS_SERVICE_URL: http://analytics-service:8084
+
+      # Redis for caching
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Server
       PORT: 8083
+    ports:
+      - "8083:8083"
     depends_on:
-      postgres:
+      quiz-db:
         condition: service_healthy
       redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
+        condition: service_healthy
     networks:
       - app-network
+    restart: unless-stopped
+
+  class-assignment-service:
+    build: ./backend/class-assignment-service
+    container_name: class-assignment-service
+    environment:
+      # Database connection
+      SPRING_DATASOURCE_URL: jdbc:postgresql://class-db:5432/class_db
+      SPRING_DATASOURCE_USERNAME: ${CLASS_DB_USER:-class_user}
+      SPRING_DATASOURCE_PASSWORD: ${CLASS_DB_PASSWORD:-class_pass_secure_123}
+
+      # Service URLs for inter-service communication
+      APP_AUTH_SERVICE_URL: http://user-auth-service:8080
+      APP_QUIZ_SERVICE_URL: http://quiz-service:8083
+      APP_NOTIFICATION_SERVICE_URL: http://notification-service:8082
+      APP_ANALYTICS_SERVICE_URL: http://analytics-service:8084
+
+      # Server
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      class-db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  recommendation-service:
+    build: ./backend/recommendation-service
+    container_name: recommendation-service
+    environment:
+      # Database connection
+      DB_HOST: recommendation-db
+      DB_PORT: 5432
+      DB_USER: ${RECOMMENDATION_DB_USER:-recommendation_user}
+      DB_PASSWORD: ${RECOMMENDATION_DB_PASSWORD:-recommendation_pass_secure_123}
+      DB_NAME: recommendation_db
+
+      # Service URLs for inter-service communication
+      AUTH_SERVICE_URL: http://user-auth-service:8080
+      QUIZ_SERVICE_URL: http://quiz-service:8083
+      ANALYTICS_SERVICE_URL: http://analytics-service:8084
+
+      # Redis for caching
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Server
+      PORT: 8085
+    ports:
+      - "8085:8085"
+    depends_on:
+      recommendation-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./backend/analytics-statistic-service
+    container_name: analytics-service
+    environment:
+      # Database connection
+      DB_HOST: analytics-db
+      DB_PORT: 5432
+      DB_USER: ${ANALYTICS_DB_USER:-analytics_user}
+      DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:-analytics_pass_secure_123}
+      DB_NAME: analytics_db
+
+      # RabbitMQ for event consumption
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-admin123}@rabbitmq:5672/
+
+      # Service URLs for inter-service communication
+      AUTH_SERVICE_URL: http://user-auth-service:8080
+      QUIZ_SERVICE_URL: http://quiz-service:8083
+      CLASS_SERVICE_URL: http://class-assignment-service:8081
+
+      # Redis for caching
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Server
+      PORT: 8084
+    ports:
+      - "8084:8084"
+    depends_on:
+      analytics-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ============================================================
+  # FRONTEND
+  # ============================================================
 
   frontend:
     build: ./frontend
     container_name: frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-auth-service
+      - quiz-service
+      - class-assignment-service
+      - notification-service
     networks:
       - app-network
+    restart: unless-stopped
+
+  # ============================================================
+  # NGINX - API Gateway / Reverse Proxy
+  # ============================================================
 
   nginx:
     build: ./nginx
     container_name: nginx
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - frontend
       - user-auth-service
       - notification-service
       - quiz-service
+      - class-assignment-service
+      - recommendation-service
+      - analytics-service
     networks:
       - app-network
+    restart: unless-stopped
+
+# ============================================================
+# NETWORKS
+# ============================================================
 
 networks:
   app-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================
+# VOLUMES
+# ============================================================
 
 volumes:
-  postgres_data:
+  user_auth_data:
+    driver: local
+  quiz_data:
+    driver: local
+  class_data:
+    driver: local
+  notification_data:
+    driver: local
+  recommendation_data:
+    driver: local
+  analytics_data:
+    driver: local
