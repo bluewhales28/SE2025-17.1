@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deploy Script for Server 20.6.128.179
+# Deploy Script for Server 34.87.187.110
 # Usage: ./deploy.sh
 
 set -e
@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Server info
 SERVER_USER="longvq"
-SERVER_IP="20.6.128.179"
+SERVER_IP="34.87.187.110"
 PROJECT_DIR="SE2025-17.1"
 
 echo -e "${YELLOW}📦 Step 1: Pulling latest code from Git...${NC}"
@@ -55,9 +55,9 @@ sleep 10
 docker-compose -f docker-compose.prod.yml ps
 
 echo "✅ Deployment completed!"
-echo "🌐 Frontend: http://20.6.128.179"
-echo "📊 RabbitMQ Management: http://20.6.128.179:15672"
+echo "🌐 Frontend: http://34.87.187.110"
+echo "📊 RabbitMQ Management: http://34.87.187.110:15672"
 EOF
 
 echo -e "${GREEN}✅ Deployment to server completed successfully!${NC}"
-echo -e "${GREEN}🌐 Access your app at: http://20.6.128.179${NC}"
+echo -e "${GREEN}🌐 Access your app at: http://34.87.187.110${NC}"
