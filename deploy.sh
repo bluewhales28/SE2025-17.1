@@ -56,10 +56,10 @@ ENVEOF
 echo 'NEXT_PUBLIC_API_URL=http://136.110.11.83/api/v1' > frontend/.env.production
 
 # Stop old containers
-sudo docker-compose -f docker-compose.prod.yml down
+sudo docker compose -f docker compose.prod.yml down
 
 # Build and start services
-sudo docker-compose -f docker-compose.prod.yml up -d --build
+sudo docker compose -f docker compose.prod.yml up -d --build
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."
@@ -67,7 +67,7 @@ sleep 30
 
 # Insert email templates
 echo "📧 Adding email templates..."
-sudo docker-compose -f docker-compose.prod.yml exec -T postgres psql -U postgres -d quizz << 'SQLEOF'
+sudo docker compose -f docker compose.prod.yml exec -T postgres psql -U postgres -d quizz << 'SQLEOF'
 INSERT INTO email_templates (name, subject, body_html, body_text, channel) VALUES
 ('password_reset', 'Password Reset Request - Quiz App', '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><h1>Password Reset Request</h1><p>Hello {{.user_name}},</p><p>Click the link below to reset your password:</p><p><a href="{{.reset_url}}">Reset Password</a></p><p>This link will expire in 1 hour.</p></div>', 'Password reset request. Click link to reset: {{.reset_url}}', 'email'),
 ('user_registered', 'Welcome to Quiz App', '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;"><h1>Welcome to Quiz App</h1><p>Hello {{.user_name}},</p><p>Thank you for joining our community.</p></div>', 'Welcome to Quiz App. Thank you for joining our community.', 'email'),
@@ -77,7 +77,7 @@ ON CONFLICT (name) DO NOTHING;
 SQLEOF
 
 # Check status
-sudo docker-compose -f docker-compose.prod.yml ps
+sudo docker compose -f docker compose.prod.yml ps
 
 echo "✅ Deployment completed!"
 echo "🌐 Frontend: http://136.110.11.83"
