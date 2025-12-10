@@ -1,0 +1,10 @@
+.git
+.gitignore
+*.md
+*.log
+.idea
+.vscode
+.DS_Store
+vendor/
+*.test
+coverage.out
