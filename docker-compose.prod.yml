@@ -29,7 +29,7 @@ services:
       - DB_USER=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
       - JWT_SECRET=${JWT_SECRET}
-      - APP_FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - APP_FRONTEND_URL=${FRONTEND_URL:-http://136.110.11.83}
     ports:
       - "8082:8082"
     networks:
