@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Deploy Script for Server 34.87.187.110
+# Deploy Script for Server 136.110.11.83
 # Usage: ./deploy.sh
 
 set -e
@@ -14,9 +14,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Server info
-SERVER_USER="longvq"
-SERVER_IP="34.87.187.110"
-PROJECT_DIR="SE2025-17.1"
+SERVER_USER="lequangtin_t67"
+SERVER_IP="136.110.11.83"
+PROJECT_DIR="/srv"
 
 echo -e "${YELLOW}📦 Step 1: Pulling latest code from Git...${NC}"
 git pull origin main
@@ -55,9 +55,9 @@ sleep 10
 docker-compose -f docker-compose.prod.yml ps
 
 echo "✅ Deployment completed!"
-echo "🌐 Frontend: http://34.87.187.110"
-echo "📊 RabbitMQ Management: http://34.87.187.110:15672"
+echo "🌐 Frontend: http://136.110.11.83"
+echo "📊 RabbitMQ Management: http://136.110.11.83:15672"
 EOF
 
 echo -e "${GREEN}✅ Deployment to server completed successfully!${NC}"
-echo -e "${GREEN}🌐 Access your app at: http://34.87.187.110${NC}"
+echo -e "${GREEN}🌐 Access your app at: http://136.110.11.83${NC}"
