@@ -1,6 +1,6 @@
 -- ENUM định nghĩa
 CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
-CREATE TYPE role_enum AS ENUM ('USER', 'TEACHER', 'ADMIN');
+CREATE TYPE role_enum AS ENUM ('USER', 'ADMIN');
 CREATE TYPE quiz_visibility_enum AS ENUM ('PUBLIC', 'PRIVATE');
 CREATE TYPE question_type_enum AS ENUM ('MULTIPLE_CHOICE', 'TRUE_FALSE', 'ESSAY');
 CREATE TYPE difficulty_enum AS ENUM ('EASY', 'MEDIUM', 'HARD');
@@ -205,8 +205,8 @@ CREATE UNIQUE INDEX idx_templates_name ON templates(name);
 -- 1. Users (Database: quizz - User Auth Service)
 INSERT INTO users (email, password_hash, full_name, phone_number, date_of_birth, gender, is_email_verified, role) VALUES
 ('admin@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Admin User', '0901234567', '1990-01-15', 'MALE', true, 'ADMIN'),
-('teacher1@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Nguyen Van A', '0912345678', '1985-03-20', 'MALE', true, 'TEACHER'),
-('teacher2@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Tran Thi B', '0923456789', '1988-07-10', 'FEMALE', true, 'TEACHER'),
+('teacher1@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Nguyen Van A', '0912345678', '1985-03-20', 'MALE', true, 'USER'),
+('teacher2@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Tran Thi B', '0923456789', '1988-07-10', 'FEMALE', true, 'USER'),
 ('student1@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Le Hoang C', '0934567890', '2005-05-15', 'MALE', true, 'USER'),
 ('student2@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Pham Thi D', '0945678901', '2006-08-20', 'FEMALE', true, 'USER'),
 ('student3@quiz.com', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890', 'Hoang Van E', '0956789012', '2005-11-25', 'MALE', true, 'USER');

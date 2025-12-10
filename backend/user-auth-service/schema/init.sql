@@ -5,7 +5,7 @@
 
 -- ENUM types
 CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
-CREATE TYPE role_enum AS ENUM ('USER', 'TEACHER', 'ADMIN');
+CREATE TYPE role_enum AS ENUM ('USER', 'ADMIN');
 
 -- ============================================================
 -- TABLES
@@ -66,8 +66,8 @@ CREATE INDEX idx_password_reset_tokens_expires_at ON password_reset_tokens(expir
 -- Hash: $2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO
 INSERT INTO users (email, password_hash, full_name, phone_number, date_of_birth, gender, is_email_verified, role) VALUES
 ('admin@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Admin User', '0901234567', '1990-01-15', 'MALE', true, 'ADMIN'),
-('teacher1@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Nguyen Van A', '0912345678', '1985-03-20', 'MALE', true, 'TEACHER'),
-('teacher2@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Tran Thi B', '0923456789', '1988-07-10', 'FEMALE', true, 'TEACHER'),
+('teacher1@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Nguyen Van A', '0912345678', '1985-03-20', 'MALE', true, 'USER'),
+('teacher2@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Tran Thi B', '0923456789', '1988-07-10', 'FEMALE', true, 'USER'),
 ('student1@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Le Hoang C', '0934567890', '2005-05-15', 'MALE', true, 'USER'),
 ('student2@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Pham Thi D', '0945678901', '2006-08-20', 'FEMALE', true, 'USER'),
 ('student3@quiz.com', '$2a$10$uIUc5bo3gZIND8bRLFolceQVC2etSPWbD.rjNE8NIpOQQ6cUQBifO', 'Hoang Van E', '0956789012', '2005-11-25', 'MALE', true, 'USER');
