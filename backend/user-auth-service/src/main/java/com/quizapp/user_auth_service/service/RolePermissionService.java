@@ -27,7 +27,7 @@ public class RolePermissionService {
             Permission.ADMIN_READ,
             Permission.ADMIN_WRITE,
             Permission.ADMIN_DELETE
-        ),
+        )
     );
     
     public Set<Permission> getPermissionsForRole(Role role) {
