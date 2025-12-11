@@ -24,8 +24,8 @@ Tất cả đều được liên kết bằng **khóa ngoại rõ ràng**, đả
 ### `users`
 
 * Lưu thông tin tài khoản: email, mật khẩu, họ tên, giới tính, vai trò, trạng thái xác minh.
-* Trường `role` xác định quyền hạn (USER, TEACHER, ADMIN).
-* Mỗi user có thể là **người tạo quiz**, **giáo viên trong lớp**, hoặc **học sinh**.
+* Trường `role` xác định quyền hạn (USER, ADMIN). USER kế thừa toàn bộ quyền tạo/làm quiz từng gán cho TEACHER trước đây.
+* Mỗi user có thể là **người tạo quiz**, **giáo viên trong lớp** (theo `class_role_enum`), hoặc **học sinh**.
 
 ### `invalid_tokens`
 

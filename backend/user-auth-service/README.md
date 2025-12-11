@@ -15,7 +15,7 @@ Microservice Spring Boot cho hệ thống quản lý người dùng và xác th�
   - Mã hóa mật khẩu an toàn bằng BCrypt
 
 - **Phân quyền dựa trên vai trò (RBAC)**
-  - 3 vai trò: USER, TEACHER và ADMIN
+  - 2 vai trò: USER và ADMIN (USER bao gồm toàn bộ quyền tạo/làm quiz trước đây của TEACHER)
   - Hệ thống phân quyền chi tiết theo từng hành động
   - JWT token chứa thông tin quyền truy cập
 
@@ -41,7 +41,7 @@ Các bảng được tạo tự động bởi Hibernate:
    - `date_of_birth` (DATE)
    - `gender` (VARCHAR - MALE/FEMALE)
    - `is_email_verified` (BOOLEAN, NOT NULL) - Luôn là `true` khi tạo user mới
-   - `role` (VARCHAR, NOT NULL - USER/TEACHER/ADMIN)
+   - `role` (VARCHAR, NOT NULL - USER/ADMIN)
    - `created_at` (TIMESTAMP)
    - `updated_at` (TIMESTAMP)
 
@@ -201,14 +201,10 @@ Service sẽ chạy tại: `http://localhost:8080`
 **USER Role:**
 - `user:read` - Đọc profile của bản thân
 - `quiz:read` - Đọc các quiz
-
-**TEACHER Role:**
-- `user:read` - Đọc thông tin user
-- `quiz:read` - Đọc các quiz
 - `quiz:write` - Tạo và chỉnh sửa quiz
 
 **ADMIN Role:**
-- Bao gồm tất cả quyền của USER và TEACHER
+- Bao gồm tất cả quyền của USER
 - `admin:read`, `admin:write`, `admin:delete`
 - `user:write`, `user:delete`
 - `quiz:delete` - Xóa quiz
