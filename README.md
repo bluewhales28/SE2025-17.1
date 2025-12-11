@@ -111,7 +111,7 @@ NEXT_PUBLIC_API_URL=http://localhost/api/v1
 - User registration & login
 - JWT token authentication
 - Password reset via email
-- Role-based access control (STUDENT/TEACHER)
+- Role-based access control (USER/ADMIN)
 
 **API Endpoints:**
 ```
@@ -143,7 +143,7 @@ PUT    /users/profile          - Cập nhật profile
 **API Endpoints:**
 ```
 GET    /quizzes                - Lấy danh sách quiz
-POST   /quizzes                - Tạo quiz mới (Teacher)
+POST   /quizzes                - Tạo quiz mới (User/Admin)
 GET    /quizzes/:id            - Chi tiết quiz
 PUT    /quizzes/:id            - Cập nhật quiz
 DELETE /quizzes/:id            - Xóa quiz
@@ -262,7 +262,7 @@ Nginx hoạt động như API Gateway và Reverse Proxy:
 
 ### Test Credentials
 ```
-Teacher Account:
+User Account (creator):
 Email: teacher@example.com
 Password: teacher123
 

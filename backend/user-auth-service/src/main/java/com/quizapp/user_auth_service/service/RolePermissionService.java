@@ -15,11 +15,6 @@ public class RolePermissionService {
     private final Map<Role, Set<Permission>> rolePermissions = Map.of(
         Role.USER, Set.of(
             Permission.USER_READ,
-            Permission.QUIZ_READ
-        ),
-        Role.TEACHER, Set.of(
-            Permission.USER_READ,
-            Permission.QUIZ_READ,
             Permission.QUIZ_WRITE
         ),
         Role.ADMIN, Set.of(
@@ -32,7 +27,7 @@ public class RolePermissionService {
             Permission.ADMIN_READ,
             Permission.ADMIN_WRITE,
             Permission.ADMIN_DELETE
-        )
+        ),
     );
     
     public Set<Permission> getPermissionsForRole(Role role) {

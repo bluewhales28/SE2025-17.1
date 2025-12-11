@@ -10,15 +10,15 @@ All accounts use password: **password123**
 - **Role:** ADMIN
 - **Full Name:** Admin User
 
-### Teacher Accounts
+### Creator/User Accounts
 1. **Email:** teacher1@quiz.com
    - **Password:** password123
-   - **Role:** TEACHER
+   - **Role:** USER
    - **Full Name:** Nguyen Van A
 
 2. **Email:** teacher2@quiz.com
    - **Password:** password123
-   - **Role:** TEACHER
+   - **Role:** USER
    - **Full Name:** Tran Thi B
 
 ### Student Accounts
