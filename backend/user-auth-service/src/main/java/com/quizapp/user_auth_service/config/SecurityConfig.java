@@ -41,6 +41,7 @@ public class SecurityConfig {
                         authorizeRequests
                                 .requestMatchers(HttpMethod.POST, PUBLIC_POST_URL).permitAll()
                                 .requestMatchers("/error").permitAll()
+                                .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority("SCOPE_user:read")
                                 .requestMatchers(HttpMethod.GET, "/users/all").hasAnyAuthority("SCOPE_admin:read")
                                 .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
