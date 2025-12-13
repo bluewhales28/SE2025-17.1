@@ -49,6 +49,9 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
+
       - name: Build with Maven
         run: ./mvnw clean compile -B
 
@@ -84,6 +87,9 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: maven
+
+      - name: Make mvnw executable
+        run: chmod +x ./mvnw
 
       - name: Run SpotBugs analysis
         run: ./mvnw spotbugs:check -B || echo "SpotBugs not configured"
