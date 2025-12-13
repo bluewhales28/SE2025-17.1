@@ -56,12 +56,10 @@ jobs:
           flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Check code formatting with black
-        run: black --check app || echo "Code formatting check completed"
-        continue-on-error: true
+        run: black --check app
 
       - name: Check import sorting with isort
-        run: isort --check-only app || echo "Import sorting check completed"
-        continue-on-error: true
+        run: isort --check-only app
 
   # ==================== TEST ====================
   test:

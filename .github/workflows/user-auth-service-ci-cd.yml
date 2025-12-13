@@ -93,11 +93,9 @@ jobs:
 
       - name: Run SpotBugs analysis
         run: ./mvnw spotbugs:check -B || echo "SpotBugs not configured"
-        continue-on-error: true
 
       - name: Run Checkstyle
         run: ./mvnw checkstyle:check -B || echo "Checkstyle not configured"
-        continue-on-error: true
 
   # ==================== SECURITY SCAN ====================
   security-scan:

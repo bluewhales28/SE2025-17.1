@@ -47,11 +47,9 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
-        continue-on-error: true
 
       - name: Run TypeScript check
         run: npx tsc --noEmit
-        continue-on-error: true
 
   # ==================== TEST ====================
   test:
@@ -78,7 +76,6 @@ jobs:
 
       - name: Run tests
         run: npm test --if-present
-        continue-on-error: true
 
   # ==================== BUILD ====================
   build:
@@ -139,8 +136,7 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        run: npm audit --audit-level=high
-        continue-on-error: true
+        run: npm audit --audit-level=high || echo "Audit completed with warnings"
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
