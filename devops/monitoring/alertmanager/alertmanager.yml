@@ -1,0 +1,134 @@
+# Alertmanager Configuration
+# Documentation: https://prometheus.io/docs/alerting/latest/configuration/
+
+global:
+  # How long to wait before sending a notification again if it has already been sent
+  resolve_timeout: 5m
+  
+  # SMTP configuration for email alerts
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_from: 'alertmanager@your-domain.com'
+  # smtp_auth_username: 'your-email@gmail.com'
+  # smtp_auth_password: 'your-app-password'
+  
+  # Slack API URL (set via environment variable or directly)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# The root route - all alerts enter here
+route:
+  # Group alerts by these labels
+  group_by: ['alertname', 'severity', 'service']
+  
+  # How long to wait before sending the first notification for a new group
+  group_wait: 30s
+  
+  # How long to wait before sending notification about new alerts in existing group
+  group_interval: 5m
+  
+  # How long to wait before re-sending notification
+  repeat_interval: 4h
+  
+  # Default receiver
+  receiver: 'default-receiver'
+  
+  # Child routes
+  routes:
+    # Critical alerts go to critical channel
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+      continue: true
+    
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      group_wait: 30s
+      repeat_interval: 4h
+    
+    # Service-specific routes
+    - match_re:
+        service: user-auth-service|notification-service|quiz-service
+      receiver: 'backend-team'
+    
+    - match:
+        service: frontend
+      receiver: 'frontend-team'
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # If critical alert is firing, suppress warning alerts for same alertname
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+# Receivers define how to send notifications
+receivers:
+  # Default receiver - logs only (for development)
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:9999/webhook'  # Dummy webhook for testing
+        send_resolved: true
+
+  # Critical alerts receiver
+  - name: 'critical-receiver'
+    # Slack notification
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#alerts-critical'
+    #     send_resolved: true
+    #     title: '🚨 CRITICAL: {{ .CommonAnnotations.summary }}'
+    #     text: '{{ .CommonAnnotations.description }}'
+    #     color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+    
+    # Email notification
+    # email_configs:
+    #   - to: 'oncall@your-domain.com'
+    #     send_resolved: true
+    #     headers:
+    #       Subject: '🚨 CRITICAL: {{ .CommonAnnotations.summary }}'
+    webhook_configs:
+      - url: 'http://localhost:9999/critical'
+        send_resolved: true
+
+  # Warning alerts receiver
+  - name: 'warning-receiver'
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+    #     channel: '#alerts-warning'
+    #     send_resolved: true
+    #     title: '⚠️ WARNING: {{ .CommonAnnotations.summary }}'
+    #     text: '{{ .CommonAnnotations.description }}'
+    #     color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
+    webhook_configs:
+      - url: 'http://localhost:9999/warning'
+        send_resolved: true
+
+  # Backend team receiver
+  - name: 'backend-team'
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/BACKEND/WEBHOOK'
+    #     channel: '#backend-alerts'
+    #     send_resolved: true
+    webhook_configs:
+      - url: 'http://localhost:9999/backend'
+        send_resolved: true
+
+  # Frontend team receiver
+  - name: 'frontend-team'
+    # slack_configs:
+    #   - api_url: 'https://hooks.slack.com/services/YOUR/FRONTEND/WEBHOOK'
+    #     channel: '#frontend-alerts'
+    #     send_resolved: true
+    webhook_configs:
+      - url: 'http://localhost:9999/frontend'
+        send_resolved: true
+

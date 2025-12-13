@@ -1,0 +1,58 @@
+# FastAPI and web framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+asyncpg==0.29.0
+alembic==1.13.1
+
+# Redis
+redis==5.0.1
+aioredis==2.0.1
+
+# Data processing
+pandas==2.2.0
+numpy==1.26.3
+
+# PDF generation
+reportlab==4.0.9
+matplotlib==3.8.2
+plotly==5.18.0
+kaleido==0.2.1
+
+# Message Queue
+aiokafka==0.10.0
+aio-pika==9.4.0
+
+# HTTP client
+httpx==0.26.0
+
+# Background tasks
+celery==5.3.6
+apscheduler==3.10.4
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Validation
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+pytest-cov==4.1.0
+httpx==0.26.0
+faker==22.6.0
+
+# Utilities
+tenacity==8.2.3
+
+

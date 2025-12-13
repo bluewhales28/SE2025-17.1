@@ -1,0 +1,106 @@
+# Prometheus Configuration
+# Documentation: https://prometheus.io/docs/prometheus/latest/configuration/configuration/
+
+global:
+  scrape_interval: 15s          # Scrape targets every 15 seconds
+  evaluation_interval: 15s      # Evaluate rules every 15 seconds
+  external_labels:
+    monitor: 'quiz-platform'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+# Load alert rules
+rule_files:
+  - '/etc/prometheus/alert-rules.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ========== Prometheus itself ==========
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # ========== Node Exporter (Host Metrics) ==========
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+
+  # ========== cAdvisor (Container Metrics) ==========
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+
+  # ========== User Auth Service (Java/Spring Boot) ==========
+  - job_name: 'user-auth-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-auth-service:8080']
+        labels:
+          service: 'user-auth-service'
+          language: 'java'
+
+  # ========== Notification Service (Go) ==========
+  - job_name: 'notification-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['notification-service:8080']
+        labels:
+          service: 'notification-service'
+          language: 'go'
+
+  # ========== Quiz Service (Go) ==========
+  - job_name: 'quiz-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['quiz-service:8080']
+        labels:
+          service: 'quiz-service'
+          language: 'go'
+
+  # ========== Analytics Service (Python/FastAPI) ==========
+  - job_name: 'analytics-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['analytics-service:8000']
+        labels:
+          service: 'analytics-service'
+          language: 'python'
+
+  # ========== Class Assignment Service (Java/Spring Boot) ==========
+  - job_name: 'class-assignment-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['class-assignment-service:8080']
+        labels:
+          service: 'class-assignment-service'
+          language: 'java'
+
+  # ========== PostgreSQL (via postgres_exporter) ==========
+  # Uncomment when postgres_exporter is set up
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # ========== Redis (via redis_exporter) ==========
+  # Uncomment when redis_exporter is set up
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # ========== RabbitMQ ==========
+  # Uncomment when RabbitMQ metrics are enabled
+  # - job_name: 'rabbitmq'
+  #   static_configs:
+  #     - targets: ['rabbitmq:15692']
+

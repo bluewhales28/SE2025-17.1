@@ -1,0 +1,18 @@
+# Grafana Dashboard Provisioning
+# Automatically load dashboards from the specified folder
+
+apiVersion: 1
+
+providers:
+  - name: 'Quiz Platform Dashboards'
+    orgId: 1
+    folder: 'Quiz Platform'
+    folderUid: 'quiz-platform'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true
+
