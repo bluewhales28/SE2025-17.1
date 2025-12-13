@@ -260,9 +260,9 @@ export default function DashboardPage() {
                                     <div className="flex items-center justify-center h-64">
                                         <svg width="240" height="240" viewBox="0 0 240 240">
                                             <circle cx="120" cy="120" r="100" fill="#475569" />
-                                            <circle cx="120" cy="120" r="100" fill="#f97316" strokeDasharray="94 314" strokeDashoffset="-188" stroke="#f97316" strokeWidth="100" fill="none" />
-                                            <circle cx="120" cy="120" r="100" fill="#ec4899" strokeDasharray="63 314" strokeDashoffset="-282" stroke="#ec4899" strokeWidth="100" fill="none" />
-                                            <circle cx="120" cy="120" r="100" fill="#6366f1" strokeDasharray="110 314" strokeDashoffset="-345" stroke="#6366f1" strokeWidth="100" fill="none" />
+                                            <circle cx="120" cy="120" r="100" strokeDasharray="94 314" strokeDashoffset="188" stroke="#f97316" strokeWidth="100" fill="none" />
+                                            <circle cx="120" cy="120" r="100" strokeDasharray="63 314" strokeDashoffset="282" stroke="#ec4899" strokeWidth="100" fill="none" />
+                                            <circle cx="120" cy="120" r="100" strokeDasharray="110 314" strokeDashoffset="345" stroke="#6366f1" strokeWidth="100" fill="none" />
                                         </svg>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 mt-4">
