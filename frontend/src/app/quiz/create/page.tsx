@@ -9,6 +9,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { useAuth } from "@/hooks/useAuth"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1"
+const QUIZ_API_URL = `${API_BASE_URL}/quizzes`
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "ESSAY"
 
@@ -38,6 +42,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9)
 
 export default function QuizCreatePage() {
   const router = useRouter()
+  const { user } = useAuth()
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -234,8 +239,49 @@ export default function QuizCreatePage() {
   const handleSave = async () => {
     if (!validateForm()) return
     const payload = buildPayload()
-    console.log("Quiz Data:", JSON.stringify(payload, null, 2))
-    toast.success("Quiz đã được lưu (xem Console để xem JSON)!")
+
+    // Map sang format backend quiz-service
+    const body = {
+      title: payload.title,
+      description: payload.description,
+      timeLimit: payload.timeLimit,
+      totalPoints: payload.totalPoints,
+      maxAttempts: payload.maxAttempts,
+      isPublic: payload.isPublic,
+      tags: payload.tags,
+      topic: payload.topic,
+      difficulty: payload.difficulty,
+      creatorId: user?.id || 0,
+      questions: payload.questions.map((q) => ({
+        content: q.content,
+        type: q.type,
+        difficulty: q.difficulty,
+        points: q.points,
+        tags: q.tags,
+        // Backend model Question không lưu answers ở đây, nên chỉ lưu quiz + questions cơ bản.
+      })),
+    }
+
+    try {
+      const res = await fetch(QUIZ_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Lưu quiz thất bại")
+      }
+
+      toast.success("Lưu quiz thành công!")
+      router.push("/latest")
+    } catch (error: any) {
+      console.error("Save quiz error:", error)
+      toast.error(error.message || "Có lỗi xảy ra khi lưu quiz")
+    }
   }
 
   const handlePreview = () => {
