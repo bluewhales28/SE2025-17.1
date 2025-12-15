@@ -10,9 +10,17 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useAuth } from "@/hooks/useAuth"
+import Cookies from "js-cookie"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1"
 const QUIZ_API_URL = `${API_BASE_URL}/quizzes`
+const USER_PROFILE_API_URL = `${API_BASE_URL}/users/profile`
+
+type UserProfileApiResponse = {
+  data?: {
+    id: number
+  }
+}
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "ESSAY"
 
@@ -240,6 +248,36 @@ export default function QuizCreatePage() {
     if (!validateForm()) return
     const payload = buildPayload()
 
+    // Lấy userId từ auth-service qua /users/profile
+    let creatorId = 0
+    try {
+      const token =
+        Cookies.get("accessToken") ||
+        (typeof window !== "undefined" ? localStorage.getItem("accessToken") : null)
+
+      if (!token) {
+        toast.error("Bạn cần đăng nhập để tạo quiz")
+        router.push("/auth/login")
+        return
+      }
+
+      const profileRes = await fetch(USER_PROFILE_API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (profileRes.ok) {
+        const profileJson = (await profileRes.json()) as UserProfileApiResponse
+        if (profileJson.data?.id) {
+          creatorId = profileJson.data.id
+        }
+      }
+    } catch (e) {
+      console.error("Fetch user profile error:", e)
+      // Không chặn lưu nếu không lấy được id, nhưng creatorId sẽ là 0
+    }
+
     // Map sang format backend quiz-service
     const body = {
       title: payload.title,
@@ -251,8 +289,7 @@ export default function QuizCreatePage() {
       tags: payload.tags,
       topic: payload.topic,
       difficulty: payload.difficulty,
-      // Hiện tại JWT không chứa userId, nên tạm thời để 0 hoặc backend có thể suy ra từ token nếu cần.
-      creatorId: 0,
+      creatorId,
       questions: payload.questions.map((q) => ({
         content: q.content,
         type: q.type,
