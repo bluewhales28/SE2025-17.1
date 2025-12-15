@@ -251,7 +251,8 @@ export default function QuizCreatePage() {
       tags: payload.tags,
       topic: payload.topic,
       difficulty: payload.difficulty,
-      creatorId: user?.id || 0,
+      // Hiện tại JWT không chứa userId, nên tạm thời để 0 hoặc backend có thể suy ra từ token nếu cần.
+      creatorId: 0,
       questions: payload.questions.map((q) => ({
         content: q.content,
         type: q.type,
