@@ -278,7 +278,10 @@ export default function HomePage() {
                                     <div>
                                         <h3 className="text-xl font-semibold mb-2">Tự tạo học phần cho riêng mình</h3>
                                         <p className="text-gray-600 mb-4">Học và khám phá những gì mình thích</p>
-                                        <Button className="bg-[#6B59CE] hover:bg-[#5a4cb4] text-white">
+                                        <Button
+                                            className="bg-[#6B59CE] hover:bg-[#5a4cb4] text-white"
+                                            onClick={() => router.push("/quiz/create")}
+                                        >
                                             Tạo thẻ học
                                         </Button>
                                     </div>
