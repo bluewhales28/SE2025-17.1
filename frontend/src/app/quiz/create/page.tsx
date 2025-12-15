@@ -296,7 +296,14 @@ export default function QuizCreatePage() {
         difficulty: q.difficulty,
         points: q.points,
         tags: q.tags,
-        // Backend model Question không lưu answers ở đây, nên chỉ lưu quiz + questions cơ bản.
+        // Lưu luôn đáp án sang bảng answers thông qua GORM association
+        answers:
+          q.type === "ESSAY"
+            ? []
+            : q.answers.map((a) => ({
+                content: a.content,
+                isCorrect: a.isCorrect,
+              })),
       })),
     }
 
