@@ -18,12 +18,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import { toast } from "sonner"
 
 export default function AccountPage() {
     const router = useRouter()
-    const { user, logout } = useAuth()
+    const { user, logout, initializeUser } = useAuthStore()
     const [authorized, setAuthorized] = useState(false)
     const [checking, setChecking] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
@@ -40,6 +40,10 @@ export default function AccountPage() {
         postalCode: "700000",
         country: "Vietnam",
     })
+
+    useEffect(() => {
+        initializeUser()
+    }, [initializeUser])
 
     useEffect(() => {
         const timer = setTimeout(() => {
