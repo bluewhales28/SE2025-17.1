@@ -11,7 +11,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import { RegisterSchema, RegisterSchemaType } from "@/lib/validate"
 import {
     Form,
@@ -24,7 +24,7 @@ import {
 
 export default function RegisterPage() {
     const router = useRouter()
-    const { register, isLoading } = useAuth()
+    const { register, isLoading } = useAuthStore()
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [globalError, setGlobalError] = useState("")

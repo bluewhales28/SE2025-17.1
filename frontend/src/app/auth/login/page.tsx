@@ -11,7 +11,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import { LoginSchema, LoginSchemaType } from "@/lib/validate"
 import {
     Form,
@@ -24,7 +24,7 @@ import {
 
 export default function LoginPage() {
     const router = useRouter()
-    const { login, isLoading } = useAuth()
+    const { login, isLoading } = useAuthStore()
     const [showPassword, setShowPassword] = useState(false)
     const [globalError, setGlobalError] = useState("")
 
