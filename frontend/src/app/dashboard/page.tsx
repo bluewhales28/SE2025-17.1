@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, BarChart3, User } from "lucide-react"
+import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, BarChart3, User, Clock, Target } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -16,17 +16,23 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
+import { useQuizStore } from "@/store/useQuizStore"
 import { toast } from "sonner"
 
 export default function DashboardPage() {
     const router = useRouter()
-    const { user, isLoading, logout } = useAuth()
+    const { user, isLoading, logout, initializeUser } = useAuthStore()
+    const { quizzes, isLoading: loadingQuizzes, error, fetchQuizzes } = useQuizStore()
     const [authorized, setAuthorized] = useState(false)
     const [checking, setChecking] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [darkMode, setDarkMode] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
+
+    useEffect(() => {
+        initializeUser()
+    }, [])
 
     useEffect(() => {
         console.log('🔐 Dashboard check - isLoading:', isLoading, 'user:', user)
@@ -45,6 +51,20 @@ export default function DashboardPage() {
 
         return () => clearTimeout(timer)
     }, [user, router])
+
+    // Fetch quizzes using hook
+    useEffect(() => {
+        if (authorized) {
+            fetchQuizzes()
+        }
+    }, [authorized, fetchQuizzes])
+
+    // Show error toast if any
+    useEffect(() => {
+        if (error) {
+            toast.error(error)
+        }
+    }, [error])
 
     const handleLogout = async () => {
         try {
@@ -252,29 +272,77 @@ export default function DashboardPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Tỉ lệ chủ đề</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-center h-64">
-                                        <svg width="240" height="240" viewBox="0 0 240 240">
-                                            <circle cx="120" cy="120" r="100" fill="#475569" />
-                                            <circle cx="120" cy="120" r="100" strokeDasharray="94 314" strokeDashoffset="188" stroke="#f97316" strokeWidth="100" fill="none" />
-                                            <circle cx="120" cy="120" r="100" strokeDasharray="63 314" strokeDashoffset="282" stroke="#ec4899" strokeWidth="100" fill="none" />
-                                            <circle cx="120" cy="120" r="100" strokeDasharray="110 314" strokeDashoffset="345" stroke="#6366f1" strokeWidth="100" fill="none" />
-                                        </svg>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4 mt-4">
-                                        {categories.map((cat, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
-                                                <div className="w-4 h-4 rounded" style={{ backgroundColor: cat.color }}></div>
-                                                <span className="text-sm">{cat.value}% {cat.name}</span>
+                            {/* Quiz List Section */}
+                            <div className="col-span-2">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <CardTitle>Danh sách Quiz</CardTitle>
+                                        <Button className="bg-[#6B59CE] hover:bg-[#5a4ab8]">
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Tạo Quiz mới
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {loadingQuizzes ? (
+                                            <div className="flex items-center justify-center py-12">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6B59CE]"></div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                        ) : quizzes.length === 0 ? (
+                                            <div className="text-center py-12 text-gray-500">
+                                                Chưa có quiz nào
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {quizzes.map((quiz) => (
+                                                    <Card key={quiz.id} className="hover:shadow-lg transition-shadow cursor-pointer border border-gray-200">
+                                                        <CardHeader className="pb-3">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
+                                                                <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${quiz.difficulty === 'EASY' ? 'bg-green-100 text-green-700' :
+                                                                    quiz.difficulty === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                                                                        'bg-red-100 text-red-700'
+                                                                    }`}>
+                                                                    {quiz.difficulty}
+                                                                </span>
+                                                            </div>
+                                                        </CardHeader>
+                                                        <CardContent className="space-y-3">
+                                                            <p className="text-sm text-gray-600 line-clamp-2">{quiz.description}</p>
+
+                                                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                                <div className="flex items-center gap-1">
+                                                                    <Clock className="w-4 h-4" />
+                                                                    <span>{quiz.timeLimit} phút</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <Target className="w-4 h-4" />
+                                                                    <span>{quiz.totalPoints} điểm</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {quiz.tags && quiz.tags.length > 0 && (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {quiz.tags.slice(0, 3).map((tag, idx) => (
+                                                                        <span key={idx} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                                            {tag}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="pt-2 border-t border-gray-100">
+                                                                <span className="text-xs text-gray-500">
+                                                                    Chủ đề: <span className="font-medium text-gray-700">{quiz.topic}</span>
+                                                                </span>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </div>
 
                             <Card>
                                 <CardHeader>
