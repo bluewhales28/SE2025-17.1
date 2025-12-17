@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import Cookies from "js-cookie"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1"
@@ -50,7 +50,7 @@ const generateId = () => Math.random().toString(36).substring(2, 9)
 
 export default function QuizCreatePage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user } = useAuthStore()
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -203,9 +203,9 @@ export default function QuizCreatePage() {
           q.type === "ESSAY"
             ? []
             : q.answers.map((a) => ({
-                content: a.content,
-                isCorrect: a.isCorrect,
-              })),
+              content: a.content,
+              isCorrect: a.isCorrect,
+            })),
       })),
     }
 
@@ -301,9 +301,9 @@ export default function QuizCreatePage() {
           q.type === "ESSAY"
             ? []
             : q.answers.map((a) => ({
-                content: a.content,
-                isCorrect: a.isCorrect,
-              })),
+              content: a.content,
+              isCorrect: a.isCorrect,
+            })),
       })),
     }
 
@@ -600,11 +600,10 @@ export default function QuizCreatePage() {
                           {q.answers.map((a) => (
                             <div
                               key={a.id}
-                              className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
-                                a.isCorrect
+                              className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${a.isCorrect
                                   ? "border-emerald-500 bg-emerald-50"
                                   : "border-gray-200 bg-white"
-                              }`}
+                                }`}
                             >
                               <input
                                 type="radio"
