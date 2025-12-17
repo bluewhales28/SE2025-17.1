@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, BarChart3, User } from "lucide-react"
+import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, BarChart3, User, Clock, Target, ChevronLeft, ChevronRight } from "lucide-react"
+import useEmblaCarousel from 'embla-carousel-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -24,16 +25,126 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 import { toast } from "sonner"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
+import { useQuizStore } from "@/store/useQuizStore"
 import { SubjectCard } from "@/components/common/SubjectCard"
 import { FeatureSection } from "@/components/landing/FeatureSection"
 
 export default function HomePage() {
     const router = useRouter()
-    const { logout, isLoading, user } = useAuth()
+    const { logout, isLoading, user, initializeUser } = useAuthStore()
+    const { quizzes, isLoading: loadingQuizzes, fetchQuizzes } = useQuizStore()
     const [searchQuery, setSearchQuery] = useState("")
     const [darkMode, setDarkMode] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [completedQuizzes, setCompletedQuizzes] = useState<any[]>([])
+
+    const [emblaRef, emblaApi] = useEmblaCarousel(
+        {
+            loop: false,
+            align: 'start',
+            slidesToScroll: 1,
+            containScroll: 'trimSnaps',
+            skipSnaps: false,
+            dragFree: false
+        },
+        []
+    )
+    const [canScrollPrev, setCanScrollPrev] = useState(false)
+    const [canScrollNext, setCanScrollNext] = useState(false)
+
+    const [emblaRefCompleted, emblaApiCompleted] = useEmblaCarousel(
+        {
+            loop: false,
+            align: 'start',
+            slidesToScroll: 1,
+            containScroll: 'trimSnaps',
+            skipSnaps: false,
+            dragFree: false
+        },
+        []
+    )
+    const [canScrollPrevCompleted, setCanScrollPrevCompleted] = useState(false)
+    const [canScrollNextCompleted, setCanScrollNextCompleted] = useState(false)
+
+    const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi])
+    const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi])
+    const scrollPrevCompleted = useCallback(() => emblaApiCompleted && emblaApiCompleted.scrollPrev(), [emblaApiCompleted])
+    const scrollNextCompleted = useCallback(() => emblaApiCompleted && emblaApiCompleted.scrollNext(), [emblaApiCompleted])
+
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return
+        setCanScrollPrev(emblaApi.canScrollPrev())
+        setCanScrollNext(emblaApi.canScrollNext())
+    }, [emblaApi])
+
+    const onSelectCompleted = useCallback(() => {
+        if (!emblaApiCompleted) return
+        setCanScrollPrevCompleted(emblaApiCompleted.canScrollPrev())
+        setCanScrollNextCompleted(emblaApiCompleted.canScrollNext())
+    }, [emblaApiCompleted])
+
+    useEffect(() => {
+        if (!emblaApi) return
+        onSelect()
+        emblaApi.on('select', onSelect)
+        emblaApi.on('reInit', onSelect)
+
+        return () => {
+            emblaApi.off('select', onSelect)
+            emblaApi.off('reInit', onSelect)
+        }
+    }, [emblaApi, onSelect])
+
+    useEffect(() => {
+        if (!emblaApiCompleted) return
+        onSelectCompleted()
+        emblaApiCompleted.on('select', onSelectCompleted)
+        emblaApiCompleted.on('reInit', onSelectCompleted)
+
+        return () => {
+            emblaApiCompleted.off('select', onSelectCompleted)
+            emblaApiCompleted.off('reInit', onSelectCompleted)
+        }
+    }, [emblaApiCompleted, onSelectCompleted])
+
+    // Reinit carousel when quizzes change
+    useEffect(() => {
+        if (emblaApi && quizzes.length > 0) {
+            emblaApi.reInit()
+        }
+    }, [emblaApi, quizzes])
+
+    useEffect(() => {
+        if (emblaApiCompleted && completedQuizzes.length > 0) {
+            emblaApiCompleted.reInit()
+        }
+    }, [emblaApiCompleted, completedQuizzes])
+
+    // Load completed quizzes from localStorage
+    useEffect(() => {
+        const loadCompletedQuizzes = () => {
+            const stored = localStorage.getItem('completedQuizzes')
+            if (stored) {
+                setCompletedQuizzes(JSON.parse(stored))
+            }
+        }
+        loadCompletedQuizzes()
+
+        // Refresh on storage change (when quiz is completed in another tab)
+        window.addEventListener('storage', loadCompletedQuizzes)
+        return () => window.removeEventListener('storage', loadCompletedQuizzes)
+    }, [])
+
+    // Initialize user on mount
+    useEffect(() => {
+        initializeUser()
+    }, [initializeUser])
+
+    // Fetch quizzes
+    useEffect(() => {
+        fetchQuizzes()
+    }, [fetchQuizzes])
 
     // Debug log
     console.log('👤 Current User:', user)
@@ -297,6 +408,206 @@ export default function HomePage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Completed Quizzes Section */}
+                    {completedQuizzes.length > 0 && (
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-2xl font-bold">Quiz đã học</h2>
+                            </div>
+                            <div className="relative" key={`carousel-completed-${completedQuizzes.length}`}>
+                                {/* Navigation Buttons */}
+                                {canScrollPrevCompleted && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg hover:bg-gray-50 rounded-full"
+                                        onClick={scrollPrevCompleted}
+                                    >
+                                        <ChevronLeft className="h-6 w-6" />
+                                    </Button>
+                                )}
+                                {canScrollNextCompleted && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg hover:bg-gray-50 rounded-full"
+                                        onClick={scrollNextCompleted}
+                                    >
+                                        <ChevronRight className="h-6 w-6" />
+                                    </Button>
+                                )}
+
+                                {/* Carousel */}
+                                <div className="overflow-hidden" ref={emblaRefCompleted}>
+                                    <div className="flex gap-4">
+                                        {completedQuizzes.map((completed) => (
+                                            <div key={completed.quizId} className="flex-[0_0_100%] min-w-0 md:flex-[0_0_calc(50%-8px)] lg:flex-[0_0_calc(33.333%-11px)]">
+                                                <Card
+                                                    className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-green-200 bg-green-50/30 h-full"
+                                                    onClick={() => router.push(`/quiz/${completed.quizId}`)}
+                                                >
+                                                    <CardHeader className="pb-3">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="flex-1">
+                                                                <CardTitle className="text-lg line-clamp-2">{completed.quizTitle}</CardTitle>
+                                                                <p className="text-sm text-gray-500 mt-1">
+                                                                    {new Date(completed.completedAt).toLocaleDateString('vi-VN', {
+                                                                        day: '2-digit',
+                                                                        month: '2-digit',
+                                                                        year: 'numeric'
+                                                                    })}
+                                                                </p>
+                                                            </div>
+                                                            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${completed.quizDifficulty === 'EASY' ? 'bg-green-100 text-green-700' :
+                                                                completed.quizDifficulty === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {completed.quizDifficulty}
+                                                            </span>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="text-2xl font-bold text-[#6B59CE]">
+                                                                    {completed.score}/{completed.totalPoints}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600">
+                                                                    ({((completed.score / completed.totalPoints) * 100).toFixed(0)}%)
+                                                                </div>
+                                                            </div>
+                                                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${(completed.score / completed.totalPoints) >= 0.8 ? 'bg-green-100 text-green-700' :
+                                                                    (completed.score / completed.totalPoints) >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
+                                                                        'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {(completed.score / completed.totalPoints) >= 0.8 ? '✨ Xuất sắc' :
+                                                                    (completed.score / completed.totalPoints) >= 0.5 ? '👍 Khá' : '💪 Cố lên'}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Progress Bar */}
+                                                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                                            <div
+                                                                className="bg-gradient-to-r from-[#6B59CE] to-[#8B7CE8] h-full transition-all"
+                                                                style={{ width: `${(completed.score / completed.totalPoints) * 100}%` }}
+                                                            ></div>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between text-xs text-gray-500">
+                                                            <span>Làm lại để cải thiện</span>
+                                                            <span>🔄</span>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quiz Section */}
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-bold">Quiz phổ biến</h2>
+                            <Button variant="ghost" onClick={() => router.push("/dashboard")}>
+                                Xem tất cả →
+                            </Button>
+                        </div>
+                        {loadingQuizzes ? (
+                            <div className="flex items-center justify-center py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6B59CE]"></div>
+                            </div>
+                        ) : !quizzes || quizzes.length === 0 ? (
+                            <Card>
+                                <CardContent className="py-12 text-center text-gray-500">
+                                    Chưa có quiz nào
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="relative" key={`carousel-${quizzes.length}`}>
+                                {/* Navigation Buttons */}
+                                {canScrollPrev && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg hover:bg-gray-50 rounded-full"
+                                        onClick={scrollPrev}
+                                    >
+                                        <ChevronLeft className="h-6 w-6" />
+                                    </Button>
+                                )}
+                                {canScrollNext && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg hover:bg-gray-50 rounded-full"
+                                        onClick={scrollNext}
+                                    >
+                                        <ChevronRight className="h-6 w-6" />
+                                    </Button>
+                                )}
+
+                                {/* Carousel */}
+                                <div className="overflow-hidden" ref={emblaRef}>
+                                    <div className="flex gap-4">
+                                        {quizzes.map((quiz) => (
+                                            <div key={quiz.id} className="flex-[0_0_100%] min-w-0 md:flex-[0_0_calc(50%-8px)] lg:flex-[0_0_calc(33.333%-11px)]">
+                                                <Card
+                                                    className="hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 h-full"
+                                                    onClick={() => router.push(`/quiz/${quiz.id}`)}
+                                                >
+                                                    <CardHeader className="pb-3">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <CardTitle className="text-lg line-clamp-2">{quiz.title}</CardTitle>
+                                                            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${quiz.difficulty === 'EASY' ? 'bg-green-100 text-green-700' :
+                                                                quiz.difficulty === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {quiz.difficulty}
+                                                            </span>
+                                                        </div>
+                                                    </CardHeader>
+                                                    <CardContent className="space-y-3">
+                                                        <CardDescription className="line-clamp-2">{quiz.description}</CardDescription>
+
+                                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                            <div className="flex items-center gap-1">
+                                                                <Clock className="w-4 h-4" />
+                                                                <span>{quiz.timeLimit} phút</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1">
+                                                                <Target className="w-4 h-4" />
+                                                                <span>{quiz.totalPoints} điểm</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {quiz.tags && quiz.tags.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {quiz.tags.slice(0, 3).map((tag, idx) => (
+                                                                    <span key={idx} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="pt-2 border-t border-gray-100">
+                                                            <span className="text-xs text-gray-500">
+                                                                Chủ đề: <span className="font-medium text-gray-700">{quiz.topic}</span>
+                                                            </span>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Study Topics Section */}
                     <FeatureSection />
