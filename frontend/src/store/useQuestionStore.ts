@@ -68,7 +68,12 @@ export const useQuestionStore = create<QuestionState>((set, get) => ({
         set({ isLoading: true, error: null })
         try {
             const response = await questionService.createQuestion(data)
-            const newQuestion: Question = response.data || response
+            let newQuestion: Question
+            if (response && typeof response === 'object' && 'data' in response && response.data && typeof response.data === 'object' && 'id' in response.data) {
+                newQuestion = response.data as Question
+            } else {
+                newQuestion = response as Question
+            }
             set((state) => ({
                 questions: [...state.questions, newQuestion],
                 isLoading: false
