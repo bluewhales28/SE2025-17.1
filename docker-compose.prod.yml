@@ -8,7 +8,10 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost
+      - NEXT_PUBLIC_AUTH_API_URL=http://localhost:8082
+      - NEXT_PUBLIC_QUIZ_API_URL=http://localhost:8083
+      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8082
     ports:
       - "3000:3000"
     networks:
@@ -122,6 +125,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-quizz}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/quiz-service/db:/docker-entrypoint-initdb.d/quiz_service_db:ro
     ports:
       - "5432:5432"
     networks:
