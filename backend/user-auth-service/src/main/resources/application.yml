@@ -45,6 +45,12 @@ management:
   endpoint:
     health:
       enabled: true
+      show-details: when-authorized
+  health:
+    db:
+      enabled: false
+    rabbit:
+      enabled: false
 
 logging:
   level:
