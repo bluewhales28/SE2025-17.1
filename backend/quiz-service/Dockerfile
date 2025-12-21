@@ -19,12 +19,12 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     -trimpath \
     -o main .
 
-# Run stage - minimal image
-FROM scratch
+# Run stage - use alpine instead of scratch for wget support
+FROM alpine:3.19
 WORKDIR /app
 
-# Copy CA certificates for HTTPS
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Install wget and CA certificates for healthcheck
+RUN apk --no-cache add ca-certificates wget
 
 # Copy binary
 COPY --from=builder /app/main .
@@ -32,6 +32,6 @@ COPY --from=builder /app/main .
 EXPOSE 8083
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD ["/app/main", "health"] || exit 1
+    CMD wget --no-verbose --tries=1 -O /dev/null http://localhost:8083/health || exit 1
 
 CMD ["./main"]
