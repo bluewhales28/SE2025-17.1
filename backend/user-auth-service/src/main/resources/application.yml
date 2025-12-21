@@ -37,6 +37,15 @@ app:
     exchange: notification-exchange
     routingKey: notification.email
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      enabled: true
+
 logging:
   level:
     org.springframework.security: DEBUG
