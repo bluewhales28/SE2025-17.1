@@ -10,12 +10,6 @@ on:
       - 'frontend/**'
       - '.github/workflows/frontend-ci-cd.yml'
       - '.github/test-ci-cd-trigger.md'
-  pull_request:
-    branches:
-      - main
-      - dev
-    paths:
-      - 'frontend/**'
   workflow_dispatch:
 
 env:
@@ -179,6 +173,44 @@ jobs:
             git pull origin feature/quan/ci-cd || git pull origin dev
             git checkout feature/quan/ci-cd || git checkout dev
             
+            # Ensure .env file exists
+            if [ ! -f .env ]; then
+              echo "Creating .env file from template..."
+              echo "# Database Configuration" > .env
+              echo "POSTGRES_USER=postgres" >> .env
+              echo "POSTGRES_PASSWORD=password" >> .env
+              echo "DB_NAME=quizz" >> .env
+              echo "DB_HOST=postgres" >> .env
+              echo "DB_PORT=5432" >> .env
+              echo "" >> .env
+              echo "# JWT Configuration" >> .env
+              echo "JWT_SECRET=5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b" >> .env
+              echo "" >> .env
+              echo "# Frontend URL" >> .env
+              echo "FRONTEND_URL=http://136.111.131.120" >> .env
+              echo "" >> .env
+              echo "# SMTP Configuration (Gmail)" >> .env
+              echo "SMTP_HOST=smtp.gmail.com" >> .env
+              echo "SMTP_PORT=587" >> .env
+              echo "SMTP_USER=nguyenanhquan_t67@hus.edu.vn" >> .env
+              echo "SMTP_PASSWORD=pgfi vfez setn zkuc" >> .env
+              echo "SMTP_FROM_EMAIL=nguyenanhquan_t67@hus.edu.vn" >> .env
+              echo "SMTP_FROM_NAME=Quiz App" >> .env
+              echo "" >> .env
+              echo "# Redis Configuration" >> .env
+              echo "REDIS_HOST=redis" >> .env
+              echo "REDIS_PORT=6379" >> .env
+              echo "" >> .env
+              echo "# RabbitMQ Configuration" >> .env
+              echo "RABBITMQ_HOST=rabbitmq" >> .env
+              echo "RABBITMQ_PORT=5672" >> .env
+              echo "RABBITMQ_USER=guest" >> .env
+              echo "RABBITMQ_PASSWORD=guest" >> .env
+              echo ".env file created!"
+            else
+              echo ".env file already exists, skipping creation."
+            fi
+            
             # Pull image with branch tag
             BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
             echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
@@ -202,7 +234,22 @@ jobs:
             
             # Restart service
             docker compose -f docker-compose.prod.yml up -d frontend
+            
+            # Wait for service to start
+            echo "Waiting for service to start..."
+            sleep 10
+            
+            # Check service status
             docker compose -f docker-compose.prod.yml ps frontend
+            
+            # Check if frontend is accessible
+            echo "Checking frontend accessibility..."
+            docker compose -f docker-compose.prod.yml exec -T frontend wget -q -O- http://localhost:3000 | head -20 || echo "Frontend not ready yet"
+            
+            # Show recent logs
+            echo "Recent logs:"
+            docker compose -f docker-compose.prod.yml logs --tail=20 frontend
+            
             echo "Deployment completed!"
 
   # ==================== DEPLOY PRODUCTION ====================
