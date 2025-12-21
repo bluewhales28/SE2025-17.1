@@ -1,9 +1,7 @@
 services:
   # Frontend Service
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/bluewhales28/se2025-17.1/frontend:dev
     container_name: frontend
     restart: unless-stopped
     environment:
@@ -19,9 +17,7 @@ services:
 
   # User Auth Service
   user-auth-service:
-    build:
-      context: ./backend/user-auth-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bluewhales28/se2025-17.1/user-auth-service:dev
     container_name: user-auth-service
     restart: unless-stopped
     environment:
@@ -43,9 +39,7 @@ services:
 
   # Quiz Service
   quiz-service:
-    build:
-      context: ./backend/quiz-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bluewhales28/se2025-17.1/quiz-service:dev
     container_name: quiz-service
     restart: unless-stopped
     environment:
@@ -64,9 +58,7 @@ services:
 
   # Notification Service
   notification-service:
-    build:
-      context: ./backend/notification-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bluewhales28/se2025-17.1/notification-service:dev
     container_name: notification-service
     restart: unless-stopped
     env_file:
@@ -94,7 +86,7 @@ services:
       rabbitmq:
         condition: service_started
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -102,9 +94,7 @@ services:
 
   # Class Assignment Service
   class-assignment-service:
-    build:
-      context: ./backend/class-assignment-service
-      dockerfile: Dockerfile
+    image: ghcr.io/bluewhales28/se2025-17.1/class-assignment-service:dev
     container_name: class-assignment-service
     restart: unless-stopped
     environment:
@@ -144,13 +134,13 @@ services:
 
   # Nginx Reverse Proxy
   nginx:
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+    image: nginx:alpine
     container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - app-network
     depends_on:
