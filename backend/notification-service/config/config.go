@@ -48,7 +48,7 @@ func LoadConfig() *Config {
         DBPort:        getEnv("DB_PORT", "5432"),
         DBUser:        getEnv("DB_USER", "postgres"),
         DBPassword:    getEnv("DB_PASSWORD", "password"),
-        DBName:        getEnv("DB_NAME", "notification_db"),
+        DBName:        getEnv("DB_NAME", "quizz"),
         RabbitMQURL:   getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
         EmailProvider: getEnv("EMAIL_PROVIDER", "smtp"),
         SMTPHost:      getEnv("SMTP_HOST", "smtp.gmail.com"),
