@@ -69,6 +69,8 @@ services:
       dockerfile: Dockerfile
     container_name: notification-service
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
