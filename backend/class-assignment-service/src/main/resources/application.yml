@@ -45,16 +45,16 @@ spring:
 
 app:
   jwt:
-    secret: 5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b
+    secret: ${JWT_SECRET:5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
     expiration: 86400000 # 24 hours in milliseconds
-  
-  services:
-    quiz-service:
-      url: http://localhost:8082
-    notification-service:
-      url: http://localhost:8083
-    auth-service:
-      url: http://localhost:8081
+
+services:
+  quiz-service:
+    url: ${APP_SERVICES_QUIZ_SERVICE_URL:http://quiz-service:8083}
+  notification-service:
+    url: ${APP_SERVICES_NOTIFICATION_SERVICE_URL:http://notification-service:8080}
+  auth-service:
+    url: ${APP_SERVICES_AUTH_SERVICE_URL:http://user-auth-service:8082}
 
 server:
   port: 8084
