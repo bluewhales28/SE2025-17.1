@@ -192,9 +192,9 @@ jobs:
               echo "# SMTP Configuration (Gmail)" >> .env
               echo "SMTP_HOST=smtp.gmail.com" >> .env
               echo "SMTP_PORT=587" >> .env
-              echo "SMTP_USER=nguyenanhquan_t67@hus.edu.vn" >> .env
-              echo "SMTP_PASSWORD=pgfi vfez setn zkuc" >> .env
-              echo "SMTP_FROM_EMAIL=nguyenanhquan_t67@hus.edu.vn" >> .env
+              echo "SMTP_USER=" >> .env
+              echo "SMTP_PASSWORD=" >> .env
+              echo "SMTP_FROM_EMAIL=" >> .env
               echo "SMTP_FROM_NAME=Quiz App" >> .env
               echo "" >> .env
               echo "# Redis Configuration" >> .env
