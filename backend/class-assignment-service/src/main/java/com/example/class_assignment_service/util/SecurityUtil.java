@@ -56,31 +56,42 @@ public class SecurityUtil {
     
     public static String getCurrentUserRole() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getAuthorities() != null) {
-            String role = authentication.getAuthorities().iterator().next().getAuthority();
-            // If role is ROLE_USER (default), try to get actual role from database
-            if ("ROLE_USER".equals(role) && userServiceClient != null) {
-                String principal = authentication.getPrincipal().toString();
-                String actualRole = null;
-                
-                if (principal.startsWith("email:")) {
-                    String email = principal.substring(6);
-                    actualRole = userServiceClient.getUserRoleByEmail(email);
-                } else {
-                    try {
-                        Long userId = Long.parseLong(principal);
-                        actualRole = userServiceClient.getUserRoleById(userId);
-                    } catch (NumberFormatException e) {
-                        // Not a valid userId
+        if (authentication != null && authentication.getAuthorities() != null && !authentication.getAuthorities().isEmpty()) {
+            try {
+                String role = authentication.getAuthorities().iterator().next().getAuthority();
+                // If role is ROLE_USER (default), try to get actual role from database
+                if ("ROLE_USER".equals(role) && userServiceClient != null) {
+                    String principal = authentication.getPrincipal().toString();
+                    String actualRole = null;
+                    
+                    if (principal.startsWith("email:")) {
+                        String email = principal.substring(6);
+                        actualRole = userServiceClient.getUserRoleByEmail(email);
+                    } else {
+                        try {
+                            Long userId = Long.parseLong(principal);
+                            actualRole = userServiceClient.getUserRoleById(userId);
+                        } catch (NumberFormatException e) {
+                            // Not a valid userId
+                        }
+                    }
+                    
+                    if (actualRole != null && !actualRole.isEmpty()) {
+                        log.debug("Retrieved actual role {} from database, replacing ROLE_USER", actualRole);
+                        return "ROLE_" + actualRole;
                     }
                 }
-                
-                if (actualRole != null && !actualRole.isEmpty()) {
-                    log.debug("Retrieved actual role {} from database, replacing ROLE_USER", actualRole);
-                    return "ROLE_" + actualRole;
-                }
+                return role;
+            } catch (Exception e) {
+                log.warn("Failed to get role from authorities: {}", e.getMessage());
+                // Default to ROLE_USER if we can't determine role
+                return "ROLE_USER";
             }
-            return role;
+        }
+        // If no authorities, default to ROLE_USER for authenticated users
+        if (authentication != null && authentication.isAuthenticated()) {
+            log.debug("No authorities found, defaulting to ROLE_USER");
+            return "ROLE_USER";
         }
         return null;
     }
