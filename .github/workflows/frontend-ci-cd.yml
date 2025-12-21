@@ -211,6 +211,19 @@ jobs:
               echo ".env file already exists, skipping creation."
             fi
             
+            # Ensure frontend/.env.production file exists
+            mkdir -p frontend
+            if [ ! -f frontend/.env.production ]; then
+              echo "Creating frontend/.env.production file..."
+              echo "NEXT_PUBLIC_API_URL=http://136.111.131.120/api/v1" > frontend/.env.production
+              echo "NEXT_PUBLIC_AUTH_API_URL=http://136.111.131.120/api/v1" >> frontend/.env.production
+              echo "NEXT_PUBLIC_QUIZ_API_URL=http://136.111.131.120/api/v1" >> frontend/.env.production
+              echo "NEXT_PUBLIC_NOTIFICATION_API_URL=http://136.111.131.120/api/v1" >> frontend/.env.production
+              echo "frontend/.env.production file created!"
+            else
+              echo "frontend/.env.production file already exists, skipping creation."
+            fi
+            
             # Pull image with branch tag
             BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
             echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
