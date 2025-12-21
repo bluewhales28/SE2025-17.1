@@ -7,6 +7,7 @@ import { ArrowLeft, Menu, Home, BookOpen, Users, Bell, Copy, RefreshCw, Plus, Ed
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { useAuthStore } from "@/store/useAuthStore"
 import { useClassStore } from "@/store/useClassStore"
 import { toast } from "sonner"
