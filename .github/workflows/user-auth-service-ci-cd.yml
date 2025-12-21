@@ -194,10 +194,10 @@ jobs:
               git clone https://github.com/bluewhales28/SE2025-17.1.git .
             fi
             
-            # Pull latest code
+            # Pull latest code (reset to match remote exactly)
             git fetch origin
-            git pull origin feature/quan/ci-cd || git pull origin dev
-            git checkout feature/quan/ci-cd || git checkout dev
+            git checkout feature/quan/ci-cd 2>/dev/null || git checkout -b feature/quan/ci-cd origin/feature/quan/ci-cd 2>/dev/null || git checkout dev
+            git reset --hard origin/feature/quan/ci-cd 2>/dev/null || git reset --hard origin/dev
             
             # Ensure .env file exists
             if [ ! -f .env ]; then
