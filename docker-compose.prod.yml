@@ -31,7 +31,7 @@ services:
       - DB_NAME=${DB_NAME:-quizz}
       - DB_USER=${POSTGRES_USER:-postgres}
       - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
       - APP_FRONTEND_URL=${FRONTEND_URL:-http://34.124.178.144}
     ports:
       - "8082:8082"
@@ -120,7 +120,7 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER:-guest}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
       - APP_SERVICES_QUIZ_SERVICE_URL=http://quiz-service:8083
       - APP_SERVICES_NOTIFICATION_SERVICE_URL=http://notification-service:8080
       - APP_SERVICES_AUTH_SERVICE_URL=http://user-auth-service:8082

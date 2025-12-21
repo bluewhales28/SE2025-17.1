@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
-    @Value("${app.jwt.secret}")
+    @Value("${app.jwt.secret:}")
     private String jwtSecret;
     
     @Override
@@ -41,6 +41,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         try {
+            if (jwtSecret == null || jwtSecret.isEmpty()) {
+                log.error("JWT_SECRET is not configured. Please set app.jwt.secret in application.yml or JWT_SECRET environment variable.");
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
             String token = authHeader.substring(7);
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
             
