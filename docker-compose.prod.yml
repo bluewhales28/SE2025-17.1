@@ -8,10 +8,10 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_AUTH_API_URL=http://localhost:8082
-      - NEXT_PUBLIC_QUIZ_API_URL=http://localhost:8083
-      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://localhost:8080
-      - NEXT_PUBLIC_API_URL=http://localhost:8082
+      - NEXT_PUBLIC_AUTH_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_QUIZ_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_API_URL=http://34.124.178.144/api/v1
     ports:
       - "3000:3000"
     networks:
@@ -110,6 +110,7 @@ services:
     networks:
       - app-network
     depends_on:
+      - frontend
       - user-auth-service
       - quiz-service
       - notification-service
