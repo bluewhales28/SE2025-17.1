@@ -3,9 +3,9 @@ spring:
     name: class-assignment-service
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/quizz
-    username: postgres
-    password: 123456
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:quizz}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -19,8 +19,8 @@ spring:
   
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
       timeout: 2000ms
       lettuce:
         pool:
@@ -29,10 +29,10 @@ spring:
           min-idle: 0
   
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: /
     listener:
       simple:
