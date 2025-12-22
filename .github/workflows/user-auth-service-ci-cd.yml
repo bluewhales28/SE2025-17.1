@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - dev
-      - 'feature/**'
     paths:
       - 'backend/user-auth-service/**'
       - '.github/workflows/user-auth-service-ci-cd.yml'
@@ -116,7 +115,6 @@ jobs:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name == 'push'
     permissions:
       contents: read
       packages: write
@@ -167,7 +165,7 @@ jobs:
     name: Deploy to Development
     runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/feature/quan/ci-cd'
+    if: github.ref == 'refs/heads/dev'
     environment:
       name: development
 
@@ -196,8 +194,9 @@ jobs:
             
             # Pull latest code (reset to match remote exactly)
             git fetch origin
-            git checkout feature/quan/ci-cd 2>/dev/null || git checkout -b feature/quan/ci-cd origin/feature/quan/ci-cd 2>/dev/null || git checkout dev
-            git reset --hard origin/feature/quan/ci-cd 2>/dev/null || git reset --hard origin/dev
+            CURRENT_BRANCH="${{ github.ref_name }}"
+            git checkout ${CURRENT_BRANCH} 2>/dev/null || git checkout -b ${CURRENT_BRANCH} origin/${CURRENT_BRANCH} 2>/dev/null || git checkout dev
+            git reset --hard origin/${CURRENT_BRANCH} 2>/dev/null || git reset --hard origin/dev
             
             # Ensure .env file exists
             if [ ! -f .env ]; then
@@ -297,19 +296,103 @@ jobs:
           command_timeout: 10m
           script: |
             echo "Deploying User Auth Service to Production..."
-            cd /opt/quiz-platform
             
-            # Pull latest image
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # Login to GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # Setup directory
+            mkdir -p ~/SE2025-17.1
+            cd ~/SE2025-17.1
+            
+            # Clone repo if not exists
+            if [ ! -d .git ]; then
+              git clone https://github.com/bluewhales28/SE2025-17.1.git .
+            fi
+            
+            # Pull latest code (reset to match remote exactly)
+            git fetch origin
+            CURRENT_BRANCH="${{ github.ref_name }}"
+            git checkout ${CURRENT_BRANCH} 2>/dev/null || git checkout -b ${CURRENT_BRANCH} origin/${CURRENT_BRANCH} 2>/dev/null || git checkout main
+            git reset --hard origin/${CURRENT_BRANCH} 2>/dev/null || git reset --hard origin/main
+            
+            # Ensure .env file exists
+            if [ ! -f .env ]; then
+              echo "Creating .env file from template..."
+              echo "# Database Configuration" > .env
+              echo "POSTGRES_USER=postgres" >> .env
+              echo "POSTGRES_PASSWORD=password" >> .env
+              echo "DB_NAME=quizz" >> .env
+              echo "DB_HOST=postgres" >> .env
+              echo "DB_PORT=5432" >> .env
+              echo "" >> .env
+              echo "# JWT Configuration" >> .env
+              echo "JWT_SECRET=5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b" >> .env
+              echo "" >> .env
+              echo "# Frontend URL" >> .env
+              echo "FRONTEND_URL=http://136.111.131.120" >> .env
+              echo "" >> .env
+              echo "# SMTP Configuration (Gmail)" >> .env
+              echo "SMTP_HOST=smtp.gmail.com" >> .env
+              echo "SMTP_PORT=587" >> .env
+              echo "SMTP_USER=" >> .env
+              echo "SMTP_PASSWORD=" >> .env
+              echo "SMTP_FROM_EMAIL=" >> .env
+              echo "SMTP_FROM_NAME=Quiz App" >> .env
+              echo "" >> .env
+              echo "# Redis Configuration" >> .env
+              echo "REDIS_HOST=redis" >> .env
+              echo "REDIS_PORT=6379" >> .env
+              echo "" >> .env
+              echo "# RabbitMQ Configuration" >> .env
+              echo "RABBITMQ_HOST=rabbitmq" >> .env
+              echo "RABBITMQ_PORT=5672" >> .env
+              echo "RABBITMQ_USER=guest" >> .env
+              echo "RABBITMQ_PASSWORD=guest" >> .env
+              echo ".env file created!"
+            else
+              echo ".env file already exists, skipping creation."
+            fi
+            
+            # Pull image with branch tag
+            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+            echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || {
+              echo "Image not found, trying :main tag..."
+              docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main || {
+                echo "Image not found, waiting for CI/CD to finish..."
+                exit 1
+              }
+            }
+            
+            # Tag as :main for docker-compose compatibility
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main 2>/dev/null || docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
             
             # Cleanup old images (keep :main and :latest)
             echo "Cleaning up old images..."
-            docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --format "{{.Repository}}:{{.Tag}}" | grep -v ":main$" | grep -v ":latest$" | tail -n +3 | xargs -r docker rmi -f || true
+            # Remove old branch-tagged images (keep only last 2 versions)
+            docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --format "{{.Repository}}:{{.Tag}}" | grep -v ":main$" | grep -v ":latest$" | grep -v ":${BRANCH_TAG}$" | tail -n +3 | xargs -r docker rmi -f || true
+            # Remove dangling images
             docker image prune -f || true
+            # Remove untagged images of this service
             docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --filter "dangling=true" -q | xargs -r docker rmi -f || true
             echo "Cleanup completed!"
             
-            # Deploy service
-            docker-compose up -d user-auth-service
-            docker-compose ps user-auth-service
+            # Restart service
+            docker compose -f docker-compose.prod.yml up -d user-auth-service
+            
+            # Wait for service to be healthy (Spring Boot needs more time)
+            echo "Waiting for service to be healthy..."
+            sleep 30
+            
+            # Check service status
+            docker compose -f docker-compose.prod.yml ps user-auth-service
+            
+            # Check health endpoint
+            echo "Checking health endpoint..."
+            docker compose -f docker-compose.prod.yml exec -T user-auth-service wget -q -O- http://localhost:8082/actuator/health || echo "Health check endpoint not ready yet"
+            
+            # Show recent logs
+            echo "Recent logs:"
+            docker compose -f docker-compose.prod.yml logs --tail=20 user-auth-service
+            
             echo "Deployment completed!"
