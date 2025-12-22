@@ -11,27 +11,6 @@ import { toast } from "sonner"
 
 export default function AnalyticsPage() {
     const router = useRouter()
-    const { user } = useAuthStore()
-    const [authorized, setAuthorized] = useState(false)
-
-    useEffect(() => {
-        if (!user) {
-            router.push('/auth/login')
-            return
-        }
-        setAuthorized(true)
-    }, [user, router])
-
-    if (!authorized) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6B59CE] mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Đang tải...</p>
-                </div>
-            </div>
-        )
-    }
 
     const analyticsOptions = [
         {

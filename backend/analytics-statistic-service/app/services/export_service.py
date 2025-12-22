@@ -1,5 +1,6 @@
 import csv
 import io
+import base64
 import tempfile
 from datetime import datetime
 from typing import Optional

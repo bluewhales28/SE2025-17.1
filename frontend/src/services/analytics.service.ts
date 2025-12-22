@@ -1,15 +1,10 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
 const ANALYTICS_API_URL = `${API_BASE_URL}/report`
 
-// Helper to get auth token
+// No authentication required - public access
 const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' 
-        ? (localStorage.getItem("accessToken") || document.cookie.split('; ').find(row => row.startsWith('accessToken='))?.split('=')[1])
-        : null
-    
     return {
-        "Content-Type": "application/json",
-        ...(token && { "Authorization": `Bearer ${token}` })
+        "Content-Type": "application/json"
     }
 }
 
