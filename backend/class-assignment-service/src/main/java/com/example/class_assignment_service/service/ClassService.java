@@ -90,7 +90,15 @@ public class ClassService {
         
         List<ClassEntity> classes;
         if (role != null && !role.isEmpty()) {
-            classes = classRepository.findByUserIdAndRole(userId, role);
+            // Convert String to ClassRole enum
+            ClassRole roleEnum;
+            try {
+                roleEnum = ClassRole.valueOf(role.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid role: {}", role);
+                throw new AppException(ErrorCode.INVALID_ROLE, "Invalid role: " + role);
+            }
+            classes = classRepository.findByUserIdAndRole(userId, roleEnum);
             log.info("Found {} classes with role filter: {}", classes.size(), role);
         } else {
             // Get classes where user is teacher (by teacher_id column)
