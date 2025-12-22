@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+psycopg2-binary
+pandas
+redis
+pika
+requests
+pandas
+python-jose
+python-multipart
+reportlab
