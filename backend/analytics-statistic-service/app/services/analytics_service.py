@@ -8,6 +8,15 @@ class AnalyticsService:
 
     def __init__(self):
         self.cache_service = CacheService()
+    
+    def _normalize_scores(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert score columns to numeric and remove invalid rows"""
+        if 'score' in df.columns:
+            df["score"] = pd.to_numeric(df["score"], errors='coerce')
+        if 'total_score' in df.columns:
+            df["total_score"] = pd.to_numeric(df["total_score"], errors='coerce')
+        df = df.dropna(subset=['score', 'total_score'])
+        return df
 
     def quiz_report(self, quiz_id: int, use_cache: bool = True):
         # Check cache
@@ -31,6 +40,11 @@ class AnalyticsService:
             return {}
 
         df = pd.DataFrame(rows)
+        df = self._normalize_scores(df)
+        
+        if df.empty:
+            return {}
+        
         df["percent"] = df["score"] / df["total_score"] * 100
 
         # Calculate percentiles
@@ -89,6 +103,11 @@ class AnalyticsService:
             return {}
 
         df = pd.DataFrame(rows)
+        df = self._normalize_scores(df)
+        
+        if df.empty:
+            return {}
+        
         df["percent"] = df["score"] / df["total_score"] * 100
 
         # Topic analysis - weak points detection
@@ -148,6 +167,11 @@ class AnalyticsService:
             return {}
 
         df = pd.DataFrame(rows)
+        df = self._normalize_scores(df)
+        
+        if df.empty:
+            return {}
+        
         df["percent"] = df["score"] / df["total_score"] * 100
 
         # Top students with more details
@@ -233,6 +257,11 @@ class AnalyticsService:
             return 0
 
         df = pd.DataFrame(rows)
+        df = self._normalize_scores(df)
+        
+        if df.empty:
+            return 0
+        
         df["percent"] = df["score"] / df["total_score"] * 100
         
         # Calculate percentile
@@ -272,6 +301,13 @@ class AnalyticsService:
         if df.empty:
             return {"message": "No data"}
 
+        # Normalize scores (convert to numeric and remove invalid rows)
+        df = self._normalize_scores(df)
+        
+        if df.empty:
+            return {"message": "No valid data"}
+        
+        # Calculate ratio safely
         df["ratio"] = df["score"] / df["total_score"]
         df["is_correct"] = (df["ratio"] >= 0.5).astype(int)
 
