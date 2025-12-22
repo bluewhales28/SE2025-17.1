@@ -1,6 +1,6 @@
 import { ApiResponse, AuthRequest, AuthResponse, RegisterRequest } from "@/types/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 const AUTH_API_URL = `${API_BASE_URL}/auth`;
 const USER_API_URL = `${API_BASE_URL}/users`;
 

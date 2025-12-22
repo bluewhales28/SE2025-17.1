@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { useAuthStore } from "@/store/useAuthStore"
 import Cookies from "js-cookie"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
 const QUIZ_API_URL = `${API_BASE_URL}/quizzes`
 const USER_PROFILE_API_URL = `${API_BASE_URL}/users/profile`
 

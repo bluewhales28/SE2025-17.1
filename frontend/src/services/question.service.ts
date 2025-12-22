@@ -1,6 +1,6 @@
 import { Question } from "@/store/useQuestionStore"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1"
 const QUESTION_API_URL = `${API_BASE_URL}/questions`
 
 export interface ApiResponse<T = any> {

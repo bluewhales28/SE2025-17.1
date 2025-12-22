@@ -317,14 +317,16 @@ export default function HomePage() {
                     )}
 
                     <div className="pt-6">
-                        <h3 className="px-4 text-sm font-semibold text-gray-500 mb-2">Thư mục của bạn</h3>
-                        <Button
-                            variant="ghost"
-                            className="w-full justify-start gap-3 text-gray-700 hover:bg-gray-50 text-base"
-                        >
-                            <Plus className="w-6 h-6" />
-                            Thư mục mới
-                        </Button>
+                        <h3 className="px-4 text-sm font-semibold text-gray-500 mb-2">Lớp học của bạn</h3>
+                        <Link href="/classes/create">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start gap-3 text-gray-700 hover:bg-gray-50 text-base"
+                            >
+                                <Plus className="w-6 h-6" />
+                                Tạo lớp học mới
+                            </Button>
+                        </Link>
                     </div>
 
                     <div className="pt-6">

@@ -5,6 +5,7 @@ import com.quizapp.user_auth_service.untils.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -19,7 +20,7 @@ import java.time.LocalDate;
 public class UserRequest implements Serializable {
 
     @NotBlank(message = "email must not blank")
-    @Email(message = "email should be valid")
+    @Pattern(regexp = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email should be valid")
     private String email;
 
     @NotBlank(message = "password must not blank")

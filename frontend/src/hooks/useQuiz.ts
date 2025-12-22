@@ -25,7 +25,8 @@ export const useQuiz = () => {
         setIsLoading(true)
         setError(null)
         try {
-            const response = await fetch('http://localhost/api/v1/quizzes')
+            const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
+            const response = await fetch(`${API_BASE_URL}/quizzes`)
 
             if (!response.ok) {
                 throw new Error('Failed to fetch quizzes')
