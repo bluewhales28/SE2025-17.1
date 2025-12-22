@@ -1,13 +1,26 @@
 import pandas as pd
+import numpy as np
+from typing import Dict, List, Any
 from app.db.connection import get_db_connection
+from app.services.cache_service import CacheService
 
 class AnalyticsService:
 
-    def quiz_report(self, quiz_id: int):
+    def __init__(self):
+        self.cache_service = CacheService()
+
+    def quiz_report(self, quiz_id: int, use_cache: bool = True):
+        # Check cache
+        cache_key = f"quiz_report:{quiz_id}"
+        if use_cache:
+            cached = self.cache_service.get(cache_key)
+            if cached:
+                return cached
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT user_id, score, total_score, topic, difficulty
+            SELECT user_id, score, total_score, topic, difficulty, submitted_at
             FROM quiz_attempt_events
             WHERE quiz_id = %s
         """, (quiz_id,))
@@ -20,22 +33,52 @@ class AnalyticsService:
         df = pd.DataFrame(rows)
         df["percent"] = df["score"] / df["total_score"] * 100
 
-        return {
+        # Calculate percentiles
+        percentiles = {
+            "p25": round(df["percent"].quantile(0.25), 2),
+            "p50": round(df["percent"].quantile(0.50), 2),  # median
+            "p75": round(df["percent"].quantile(0.75), 2),
+            "p90": round(df["percent"].quantile(0.90), 2),
+        }
+
+        # Histogram distribution (10 bins)
+        hist, bins = np.histogram(df["percent"], bins=10, range=(0, 100))
+        histogram = {
+            "bins": [round(b, 2) for b in bins.tolist()],
+            "frequencies": hist.tolist()
+        }
+
+        result = {
             "quiz_id": quiz_id,
             "attempts": len(df),
             "avg_score": round(df["percent"].mean(), 2),
             "median_score": round(df["percent"].median(), 2),
             "max_score": round(df["percent"].max(), 2),
             "min_score": round(df["percent"].min(), 2),
-            "by_topic": df.groupby("topic")["percent"].mean().to_dict(),
-            "by_difficulty": df.groupby("difficulty")["percent"].mean().to_dict(),
+            "std_dev": round(df["percent"].std(), 2),
+            "percentiles": percentiles,
+            "histogram": histogram,
+            "by_topic": df.groupby("topic")["percent"].mean().to_dict() if "topic" in df.columns else {},
+            "by_difficulty": df.groupby("difficulty")["percent"].mean().to_dict() if "difficulty" in df.columns else {},
         }
 
-    def student_report(self, student_id: int):
+        # Cache result
+        if use_cache:
+            self.cache_service.set(cache_key, result)
+
+        return result
+
+    def student_report(self, student_id: int, use_cache: bool = True):
+        cache_key = f"student_report:{student_id}"
+        if use_cache:
+            cached = self.cache_service.get(cache_key)
+            if cached:
+                return cached
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT quiz_id, score, total_score
+            SELECT quiz_id, score, total_score, topic, difficulty, submitted_at
             FROM quiz_attempt_events
             WHERE user_id = %s
         """, (student_id,))
@@ -48,17 +91,53 @@ class AnalyticsService:
         df = pd.DataFrame(rows)
         df["percent"] = df["score"] / df["total_score"] * 100
 
-        return {
+        # Topic analysis - weak points detection
+        topic_performance = df.groupby("topic")["percent"].agg(['mean', 'count']).to_dict('index')
+        weak_topics = [
+            topic for topic, stats in topic_performance.items()
+            if stats['mean'] < 60 and stats['count'] >= 2
+        ]
+
+        result = {
             "student_id": student_id,
             "completed_quizzes": df["quiz_id"].nunique(),
-            "avg_score": round(df["percent"].mean(), 2)
+            "total_attempts": len(df),
+            "avg_score": round(df["percent"].mean(), 2),
+            "median_score": round(df["percent"].median(), 2),
+            "highest_score": round(df["percent"].max(), 2),
+            "lowest_score": round(df["percent"].min(), 2),
+            "completion_rate": round(len(df) / df["quiz_id"].nunique() * 100, 2) if df["quiz_id"].nunique() > 0 else 0,
+            "topic_performance": {k: round(v['mean'], 2) for k, v in topic_performance.items()},
+            "weak_topics": weak_topics,
+            "progress_trend": self._calculate_progress_trend(df)
         }
 
-    def class_report(self, class_id: int):
+        if use_cache:
+            self.cache_service.set(cache_key, result)
+
+        return result
+
+    def _calculate_progress_trend(self, df: pd.DataFrame) -> List[float]:
+        """Calculate progress trend over time"""
+        if "submitted_at" not in df.columns or len(df) < 2:
+            return []
+        
+        df_sorted = df.sort_values("submitted_at")
+        # Calculate moving average of last 5 attempts
+        window = min(5, len(df_sorted))
+        return [round(x, 2) for x in df_sorted["percent"].tail(window).tolist()]
+
+    def class_report(self, class_id: int, use_cache: bool = True):
+        cache_key = f"class_report:{class_id}"
+        if use_cache:
+            cached = self.cache_service.get(cache_key)
+            if cached:
+                return cached
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT user_id, score, total_score
+            SELECT user_id, score, total_score, quiz_id, topic
             FROM quiz_attempt_events
             WHERE class_id = %s
         """, (class_id,))
@@ -71,50 +150,179 @@ class AnalyticsService:
         df = pd.DataFrame(rows)
         df["percent"] = df["score"] / df["total_score"] * 100
 
-        return {
+        # Top students with more details
+        student_stats = df.groupby("user_id")["percent"].agg(['mean', 'count', 'std']).reset_index()
+        student_stats.columns = ['user_id', 'avg_score', 'attempts', 'std_dev']
+        top_students = student_stats.nlargest(5, 'avg_score').to_dict('records')
+
+        # Completion rate
+        total_students = df["user_id"].nunique()
+        completed_quizzes = df["quiz_id"].nunique()
+        completion_rate = round(len(df) / (total_students * completed_quizzes) * 100, 2) if total_students * completed_quizzes > 0 else 0
+
+        result = {
             "class_id": class_id,
+            "total_students": total_students,
+            "total_attempts": len(df),
             "avg_score": round(df["percent"].mean(), 2),
-            "top_students": (
-                df.groupby("user_id")["percent"]
-                .mean()
-                .sort_values(ascending=False)
-                .head(5)
-                .to_dict()
-            )
+            "median_score": round(df["percent"].median(), 2),
+            "completion_rate": completion_rate,
+            "top_students": [
+                {
+                    "user_id": int(s["user_id"]),
+                    "avg_score": round(s["avg_score"], 2),
+                    "attempts": int(s["attempts"]),
+                    "consistency": round(100 - s["std_dev"], 2) if not pd.isna(s["std_dev"]) else 100
+                }
+                for s in top_students
+            ],
+            "topic_performance": df.groupby("topic")["percent"].mean().to_dict() if "topic" in df.columns else {}
         }
+
+        if use_cache:
+            self.cache_service.set(cache_key, result)
+
+        return result
+
+    def cross_comparison(self, student_id: int, class_id: int = None):
+        """Compare student performance vs class vs system"""
+        student_report = self.student_report(student_id, use_cache=True)
         
-    def question_analysis(self, question_id: int):
+        if class_id:
+            class_report = self.class_report(class_id, use_cache=True)
+            class_avg = class_report.get("avg_score", 0)
+        else:
+            class_avg = None
+
+        # System average (all quizzes)
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT AVG(score::float / total_score * 100) as system_avg
+            FROM quiz_attempt_events
+        """)
+        row = cur.fetchone()
+        system_avg = round(row["system_avg"], 2) if row and row["system_avg"] else 0
+        conn.close()
+
+        student_avg = student_report.get("avg_score", 0)
+
+        return {
+            "student_id": student_id,
+            "student_avg": student_avg,
+            "class_avg": class_avg,
+            "system_avg": system_avg,
+            "vs_class": round(student_avg - class_avg, 2) if class_avg else None,
+            "vs_system": round(student_avg - system_avg, 2),
+            "percentile_vs_class": self._calculate_percentile(student_avg, class_id) if class_id else None
+        }
+
+    def _calculate_percentile(self, score: float, class_id: int) -> float:
+        """Calculate student percentile in class"""
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT score, total_score
+            FROM quiz_attempt_events
+            WHERE class_id = %s
+        """, (class_id,))
+        rows = cur.fetchall()
+        conn.close()
+
+        if not rows:
+            return 0
+
+        df = pd.DataFrame(rows)
+        df["percent"] = df["score"] / df["total_score"] * 100
+        
+        # Calculate percentile
+        percentile = (df["percent"] < score).sum() / len(df) * 100
+        return round(percentile, 2)
+        
+    def question_analysis(self, question_id: int, use_cache: bool = True):
+        cache_key = f"question_analysis:{question_id}"
+        if use_cache:
+            cached = self.cache_service.get(cache_key)
+            if cached:
+                return cached
+
         conn = get_db_connection()
 
         query = """
-        SELECT score, total_score
-        FROM quiz_attempt_events
-        WHERE quiz_id = (
-            SELECT quiz_id FROM questions WHERE id = %s
-        )
+        SELECT score, total_score, user_id
+        FROM quiz_attempt_events qae
+        JOIN question_attempts qa ON qae.id = qa.attempt_id
+        WHERE qa.question_id = %s
         """
-        df = pd.read_sql(query, conn, params=(question_id,))
+        try:
+            df = pd.read_sql(query, conn, params=(question_id,))
+        except Exception:
+            # Fallback if question_attempts table doesn't exist
+            query = """
+            SELECT score, total_score, user_id
+            FROM quiz_attempt_events
+            WHERE quiz_id IN (
+                SELECT quiz_id FROM questions WHERE id = %s
+            )
+            """
+            df = pd.read_sql(query, conn, params=(question_id,))
+        
         conn.close()
 
         if df.empty:
             return {"message": "No data"}
 
         df["ratio"] = df["score"] / df["total_score"]
+        df["is_correct"] = (df["ratio"] >= 0.5).astype(int)
 
-        correct_rate = (df["ratio"] >= 0.5).mean()
+        correct_rate = df["is_correct"].mean()
         difficulty = 1 - correct_rate
 
+        # Discrimination index (27% method)
         df_sorted = df.sort_values("ratio")
-        k = int(len(df) * 0.27) or 1
+        k = max(1, int(len(df) * 0.27))
 
-        low = df_sorted.head(k)["ratio"].mean()
-        high = df_sorted.tail(k)["ratio"].mean()
+        low_group = df_sorted.head(k)["is_correct"].mean()
+        high_group = df_sorted.tail(k)["is_correct"].mean()
+        discrimination = high_group - low_group
 
-        discrimination = high - low
-
-        return {
+        result = {
             "question_id": question_id,
-            "correct_rate": round(correct_rate, 2),
+            "total_attempts": len(df),
+            "correct_attempts": int(df["is_correct"].sum()),
+            "wrong_attempts": int((~df["is_correct"].astype(bool)).sum()),
+            "correct_rate": round(correct_rate * 100, 2),
             "difficulty": round(difficulty, 2),
             "discrimination": round(discrimination, 2),
-        }    
+            "difficulty_level": self._classify_difficulty(difficulty),
+            "quality": self._classify_question_quality(discrimination, difficulty)
+        }
+
+        if use_cache:
+            self.cache_service.set(cache_key, result)
+
+        return result
+
+    def _classify_difficulty(self, difficulty: float) -> str:
+        """Classify question difficulty"""
+        if difficulty < 0.2:
+            return "Very Easy"
+        elif difficulty < 0.4:
+            return "Easy"
+        elif difficulty < 0.6:
+            return "Medium"
+        elif difficulty < 0.8:
+            return "Hard"
+        else:
+            return "Very Hard"
+
+    def _classify_question_quality(self, discrimination: float, difficulty: float) -> str:
+        """Classify question quality based on discrimination and difficulty"""
+        if discrimination > 0.4 and 0.3 < difficulty < 0.7:
+            return "Excellent"
+        elif discrimination > 0.3:
+            return "Good"
+        elif discrimination > 0.2:
+            return "Fair"
+        else:
+            return "Poor - Consider revision"

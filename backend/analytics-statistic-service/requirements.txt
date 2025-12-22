@@ -5,7 +5,15 @@ pandas
 redis
 pika
 requests
-pandas
 python-jose
 python-multipart
 reportlab
+matplotlib
+plotly
+kaleido
+celery
+slowapi
+python-dotenv
+pytest
+pytest-asyncio
+httpx

@@ -2,27 +2,38 @@ import csv
 import io
 import tempfile
 from datetime import datetime
+from typing import Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Query
 from fastapi.responses import StreamingResponse, FileResponse
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 from app.db.connection import get_db_connection
+from app.services.chart_service import ChartService
 
 
 class ExportService:
+
+    def __init__(self):
+        self.chart_service = ChartService()
 
     # =====================================================
     # CSV EXPORT
     # =====================================================
     def export_csv(
             self,
-            quiz_id: int | None = None,
-            class_id: int | None = None,
-            user_id: int | None = None,
+            quiz_id: Optional[int] = None,
+            class_id: Optional[int] = None,
+            user_id: Optional[int] = None,
+            start_date: Optional[str] = None,
+            end_date: Optional[str] = None,
         ):
         try:
             conn = get_db_connection()
@@ -54,6 +65,14 @@ class ExportService:
             if user_id is not None:
                 query += " AND user_id = %s"
                 params.append(user_id)
+
+            if start_date:
+                query += " AND submitted_at >= %s"
+                params.append(start_date)
+
+            if end_date:
+                query += " AND submitted_at <= %s"
+                params.append(end_date)
 
             cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
@@ -100,22 +119,54 @@ class ExportService:
         )
 
     # =====================================================
-    # PDF EXPORT (BAR CHART)
+    # PDF EXPORT (ENHANCED WITH CHARTS)
     # =====================================================
-    def export_pdf(self):
+    def export_pdf(
+            self,
+            quiz_id: Optional[int] = None,
+            class_id: Optional[int] = None,
+            report_type: str = "quiz"
+        ):
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            cursor.execute("""
-                SELECT
-                    quiz_id,
-                    COUNT(*) AS attempts,
-                    AVG(score) AS avg_score
-                FROM quiz_attempt_events
-                GROUP BY quiz_id
-                ORDER BY quiz_id
-            """)
+            # Build query based on report type
+            if report_type == "quiz" and quiz_id:
+                cursor.execute("""
+                    SELECT
+                        quiz_id,
+                        COUNT(*) AS attempts,
+                        AVG(score::float / total_score * 100) AS avg_score,
+                        MIN(score::float / total_score * 100) AS min_score,
+                        MAX(score::float / total_score * 100) AS max_score
+                    FROM quiz_attempt_events
+                    WHERE quiz_id = %s
+                    GROUP BY quiz_id
+                """, (quiz_id,))
+            elif report_type == "class" and class_id:
+                cursor.execute("""
+                    SELECT
+                        user_id,
+                        COUNT(*) AS attempts,
+                        AVG(score::float / total_score * 100) AS avg_score
+                    FROM quiz_attempt_events
+                    WHERE class_id = %s
+                    GROUP BY user_id
+                    ORDER BY avg_score DESC
+                    LIMIT 10
+                """, (class_id,))
+            else:
+                cursor.execute("""
+                    SELECT
+                        quiz_id,
+                        COUNT(*) AS attempts,
+                        AVG(score::float / total_score * 100) AS avg_score
+                    FROM quiz_attempt_events
+                    GROUP BY quiz_id
+                    ORDER BY quiz_id
+                    LIMIT 20
+                """)
 
             rows = cursor.fetchall()
 
@@ -135,83 +186,83 @@ class ExportService:
             cursor.close()
             conn.close()
 
-        # ================= PDF SETUP =================
+        # ================= PDF SETUP (Using SimpleDocTemplate) =================
         tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        pdf = canvas.Canvas(tmp.name, pagesize=A4)
+        doc = SimpleDocTemplate(tmp.name, pagesize=A4)
+        story = []
+        styles = getSampleStyleSheet()
 
-        width, height = A4
-
-        # ================= HEADER =================
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawString(50, height - 50, "Quiz Analytics Report")
-
-        pdf.setFont("Helvetica", 10)
-        pdf.drawString(
-            50,
-            height - 70,
-            f"Generated at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC"
+        # Title
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            textColor=colors.HexColor('#1a1a1a'),
+            spaceAfter=30,
+            alignment=TA_CENTER
         )
+        story.append(Paragraph("Analytics Report", title_style))
+        story.append(Spacer(1, 0.2*inch))
 
-        # ================= BAR CHART CONFIG =================
-        chart_x = 50
-        chart_y = height - 350
-        chart_height = 200
-
-        bar_width = 30
-        gap = 20
-
-        # Ép kiểu float để tránh lỗi Decimal / str
-        max_avg = max(float(r["avg_score"]) for r in rows) or 1.0
-
-        # ================= AXES =================
-        pdf.setStrokeColor(colors.black)
-        pdf.line(chart_x, chart_y, chart_x, chart_y + chart_height)
-        pdf.line(chart_x, chart_y, width - 50, chart_y)
-
-        # ================= DRAW BARS =================
-        x = chart_x + 40
-        pdf.setFont("Helvetica", 9)
-
-        for r in rows:
-            quiz_id = r["quiz_id"]
-            avg_score = float(r["avg_score"])
-
-            bar_height = (avg_score / max_avg) * chart_height
-
-            pdf.setFillColor(colors.HexColor("#4F81BD"))
-            pdf.rect(x, chart_y, bar_width, bar_height, fill=1)
-
-            pdf.setFillColor(colors.black)
-
-            # Quiz ID label
-            pdf.drawCentredString(
-                x + bar_width / 2,
-                chart_y - 15,
-                str(quiz_id)
-            )
-
-            # Value label
-            pdf.drawCentredString(
-                x + bar_width / 2,
-                chart_y + bar_height + 5,
-                f"{avg_score:.1f}"
-            )
-
-            x += bar_width + gap
-
-        # ================= LEGEND =================
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(
-            50,
-            chart_y + chart_height + 20,
-            "Average Score per Quiz"
+        # Metadata
+        meta_style = ParagraphStyle(
+            'Meta',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.grey
         )
+        story.append(Paragraph(
+            f"Generated at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC",
+            meta_style
+        ))
+        story.append(Spacer(1, 0.3*inch))
 
-        pdf.showPage()
-        pdf.save()
+        # Generate chart
+        if report_type == "quiz" and quiz_id:
+            chart_data = {str(r["quiz_id"]): float(r["avg_score"]) for r in rows}
+            chart_title = f"Quiz {quiz_id} Performance"
+        elif report_type == "class" and class_id:
+            chart_data = {f"Student {r['user_id']}": float(r["avg_score"]) for r in rows}
+            chart_title = f"Class {class_id} Top Students"
+        else:
+            chart_data = {str(r["quiz_id"]): float(r["avg_score"]) for r in rows}
+            chart_title = "Quiz Performance Overview"
 
+        chart_base64 = self.chart_service.generate_bar_chart(chart_data, chart_title)
+        chart_img = Image(io.BytesIO(base64.b64decode(chart_base64)), width=6*inch, height=3.6*inch)
+        story.append(chart_img)
+        story.append(Spacer(1, 0.3*inch))
+
+        # Data table
+        table_data = [["ID", "Attempts", "Avg Score", "Min", "Max"]]
+        for r in rows[:10]:  # Limit to 10 rows
+            row_data = [
+                str(r.get("quiz_id") or r.get("user_id", "")),
+                str(r["attempts"]),
+                f"{float(r['avg_score']):.2f}%",
+                f"{float(r.get('min_score', 0)):.2f}%" if 'min_score' in r else "-",
+                f"{float(r.get('max_score', 0)):.2f}%" if 'max_score' in r else "-"
+            ]
+            table_data.append(row_data)
+
+        table = Table(table_data, colWidths=[1.5*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        story.append(table)
+
+        doc.build(story)
+
+        filename = f"{report_type}_report_{quiz_id or class_id or 'all'}.pdf"
         return FileResponse(
             tmp.name,
-            filename="quiz_analytics_report.pdf",
+            filename=filename,
             media_type="application/pdf"
         )

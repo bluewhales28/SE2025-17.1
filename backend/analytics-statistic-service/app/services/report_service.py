@@ -1,3 +1,4 @@
+from typing import Optional
 from app.services.analytics_service import AnalyticsService
 
 class ReportService:
@@ -15,3 +16,7 @@ class ReportService:
     
     def question(self, question_id: int):
         return self.analytics.question_analysis(question_id)
+    
+    def cross_comparison(self, student_id: int, class_id: Optional[int] = None):
+        """Compare student performance vs class vs system"""
+        return self.analytics.cross_comparison(student_id, class_id)
