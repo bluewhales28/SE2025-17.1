@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Depends
 from typing import Optional
+from app.core.security import verify_token
 from app.services.report_service import ReportService
 from app.services.export_service import ExportService
 from app.services.certificate_service import CertificateService
