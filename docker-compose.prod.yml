@@ -6,10 +6,10 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_AUTH_API_URL=http://136.111.131.120/api/v1
-      - NEXT_PUBLIC_QUIZ_API_URL=http://136.111.131.120/api/v1
-      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://136.111.131.120/api/v1
-      - NEXT_PUBLIC_API_URL=http://136.111.131.120/api/v1
+      - NEXT_PUBLIC_AUTH_API_URL=http://34.135.81.236/api/v1
+      - NEXT_PUBLIC_QUIZ_API_URL=http://34.135.81.236/api/v1
+      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://34.135.81.236/api/v1
+      - NEXT_PUBLIC_API_URL=http://34.135.81.236/api/v1
     networks:
       - app-network
 

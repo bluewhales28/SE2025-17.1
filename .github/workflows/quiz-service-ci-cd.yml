@@ -181,7 +181,7 @@ jobs:
               echo "JWT_SECRET=5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b" >> .env
               echo "" >> .env
               echo "# Frontend URL" >> .env
-              echo "FRONTEND_URL=http://136.111.131.120" >> .env
+              echo "FRONTEND_URL=http://34.135.81.236" >> .env
               echo "" >> .env
               echo "# SMTP Configuration (Gmail)" >> .env
               echo "SMTP_HOST=smtp.gmail.com" >> .env
@@ -298,7 +298,7 @@ jobs:
               echo "JWT_SECRET=5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b" >> .env
               echo "" >> .env
               echo "# Frontend URL" >> .env
-              echo "FRONTEND_URL=http://136.111.131.120" >> .env
+              echo "FRONTEND_URL=http://34.135.81.236" >> .env
               echo "" >> .env
               echo "# SMTP Configuration (Gmail)" >> .env
               echo "SMTP_HOST=smtp.gmail.com" >> .env
