@@ -10,6 +10,7 @@ import com.example.class_assignment_service.repository.ClassMemberRepository;
 import com.example.class_assignment_service.repository.ClassRepository;
 import com.example.class_assignment_service.exception.AppException;
 import com.example.class_assignment_service.exception.ErrorCode;
+import com.example.class_assignment_service.client.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
