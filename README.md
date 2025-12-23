@@ -246,6 +246,8 @@ GET    /quizzes/:id/result     - Xem kết quả
 * Check database health: `docker-compose ps`
 * Restart database: `docker-compose restart user-auth-db quiz-db notification-db`
 
+* *Setup & Deploy:* xem DEPLOY.md
+
 * *Video Demo:* 
   * https://drive.google.com/drive/folders/1MoJE76vzGAZUolf9X2cId5zkBZEiRolN?usp=drive_link
 
