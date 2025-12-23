@@ -264,7 +264,7 @@ export default function ClassesPage() {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => router.push(`/classes/${cls.id}`)}>
                                                         <BookOpen className="mr-2 h-4 w-4" />
-                                                        Xem chi tiết
+                                                        Xem chi tiết nhé
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => router.push(`/classes/${cls.id}/edit`)}>
                                                         <Edit className="mr-2 h-4 w-4" />
