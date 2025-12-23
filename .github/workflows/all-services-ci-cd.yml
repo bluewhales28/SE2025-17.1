@@ -1,0 +1,104 @@
+name: All Services CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to build (leave empty for all changed services)'
+        required: false
+        type: choice
+        options:
+          - ''
+          - user-auth-service
+          - notification-service
+          - quiz-service
+          - analytics-service
+          - class-assignment-service
+          - frontend
+
+jobs:
+  # ==================== DETECT CHANGES ====================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      user-auth: ${{ steps.filter.outputs.user-auth }}
+      notification: ${{ steps.filter.outputs.notification }}
+      quiz: ${{ steps.filter.outputs.quiz }}
+      analytics: ${{ steps.filter.outputs.analytics }}
+      class-assignment: ${{ steps.filter.outputs.class-assignment }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      any-service: ${{ steps.check.outputs.any-service }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            user-auth:
+              - 'backend/user-auth-service/**'
+            notification:
+              - 'backend/notification-service/**'
+            quiz:
+              - 'backend/quiz-service/**'
+            analytics:
+              - 'backend/analytics-statistic-service/**'
+            class-assignment:
+              - 'backend/class-assignment-service/**'
+            frontend:
+              - 'frontend/**'
+
+      - name: Check if any service changed
+        id: check
+        run: |
+          if [[ "${{ steps.filter.outputs.user-auth }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.notification }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.quiz }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.analytics }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.class-assignment }}" == "true" ]] || \
+             [[ "${{ steps.filter.outputs.frontend }}" == "true" ]]; then
+            echo "any-service=true" >> $GITHUB_OUTPUT
+          else
+            echo "any-service=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ==================== SUMMARY ====================
+  summary:
+    name: CI/CD Summary
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## 🚀 CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services Changed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Changed | Workflow |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| User Auth Service | ${{ needs.detect-changes.outputs.user-auth == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/user-auth-service-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Notification Service | ${{ needs.detect-changes.outputs.notification == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/notification-service-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quiz Service | ${{ needs.detect-changes.outputs.quiz == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/quiz-service-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Analytics Service | ${{ needs.detect-changes.outputs.analytics == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/analytics-service-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Class Assignment Service | ${{ needs.detect-changes.outputs.class-assignment == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/class-assignment-service-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.detect-changes.outputs.frontend == 'true' && '✅' || '❌' }} | [View](../../actions/workflows/frontend-ci-cd.yml) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pipeline Info" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Each service has its own dedicated workflow that runs automatically when changes are detected." >> $GITHUB_STEP_SUMMARY
