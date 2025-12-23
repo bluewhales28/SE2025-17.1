@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Các route không cần authentication (public routes)
-const publicRoutes = ["/", "/auth/login", "/auth/register", "/forgot-password"];
+const publicRoutes = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"];
 
 // Các route chỉ dành cho guest (đã đăng nhập thì không vào được nữa)
-const authRoutes = ["/auth/login", "/auth/register", "/forgot-password"];
+// Lưu ý: reset-password KHÔNG nằm trong danh sách này vì user có thể reset password ngay cả khi đã đăng nhập
+const authRoutes = ["/auth/login", "/auth/register"];
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;

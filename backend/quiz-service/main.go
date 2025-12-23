@@ -15,6 +15,11 @@ func main() {
 
 	r := gin.Default()
 
+	// Health check endpoint
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	// Routes
 	quizzes := r.Group("/quizzes")
 	{
@@ -25,7 +30,11 @@ func main() {
 
 	questions := r.Group("/questions")
 	{
+		questions.GET("", handlers.GetQuestions)
 		questions.POST("", handlers.CreateQuestion)
+		questions.GET("/:id", handlers.GetQuestion)
+		questions.PUT("/:id", handlers.UpdateQuestion)
+		questions.DELETE("/:id", handlers.DeleteQuestion)
 	}
 
 	port := os.Getenv("PORT")

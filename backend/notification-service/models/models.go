@@ -1,10 +1,53 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"gorm.io/datatypes"
 )
+
+// FlexibleTime wraps time.Time to handle multiple timestamp formats
+type FlexibleTime struct {
+	time.Time
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling for FlexibleTime
+func (ft *FlexibleTime) UnmarshalJSON(b []byte) error {
+	// Try to unmarshal as number (Unix timestamp in milliseconds)
+	var num int64
+	if err := json.Unmarshal(b, &num); err == nil {
+		ft.Time = time.Unix(0, num*int64(time.Millisecond))
+		return nil
+	}
+	
+	// Try to unmarshal as string
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	
+	// Try multiple timestamp formats
+	formats := []string{
+		time.RFC3339,
+		time.RFC3339Nano,
+		"2006-01-02T15:04:05.999999999Z",
+		"2006-01-02T15:04:05.999Z",
+		"2006-01-02T15:04:05Z",
+	}
+	
+	var parseErr error
+	for _, format := range formats {
+		t, err := time.Parse(format, s)
+		if err == nil {
+			ft.Time = t
+			return nil
+		}
+		parseErr = err
+	}
+	
+	return parseErr
+}
 
 // Notification đại diện cho một bản ghi thông báo trong cơ sở dữ liệu.
 // Thông báo được gửi đến người dùng qua nhiều kênh (email, in-app, push).
@@ -58,7 +101,7 @@ type Template struct {
 
 // TableName thiết lập tên bảng cho mô hình Template.
 func (Template) TableName() string {
-	return "templates"
+	return "email_templates"
 }
 
 // Event đại diện cho một sự kiện từ các dịch vụ khác kích hoạt thông báo.
@@ -67,9 +110,14 @@ type Event struct {
 	ID        string                 `json:"id"`
 	EventType string                 `json:"event_type"`   // VD: "quiz_assigned"
 	UserID    uint                   `json:"user_id"`
-	Timestamp time.Time              `json:"timestamp"`
+	Timestamp string                 `json:"timestamp"`    // ISO 8601 format timestamp
 	Data      map[string]interface{} `json:"data"`         // Ngữ cảnh bổ sung để hiển thị mẫu
 	Retry     int                    `json:"retry"`        // Số lần thử lại cho các sự kiện bị lỗi
+}
+
+// GetTime converts the ISO 8601 timestamp string to time.Time
+func (e *Event) GetTime() (time.Time, error) {
+	return time.Parse(time.RFC3339Nano, e.Timestamp)
 }
 
 // NotificationRequest là nội dung yêu cầu API để tạo thông báo.

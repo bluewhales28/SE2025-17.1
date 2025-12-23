@@ -1,4 +1,0 @@
-CREATE DATABASE quizz;
-CREATE DATABASE notification_db;
-CREATE DATABASE quiz_db;
-

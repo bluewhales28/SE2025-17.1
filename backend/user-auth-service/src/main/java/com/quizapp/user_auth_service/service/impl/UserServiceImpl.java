@@ -1,5 +1,6 @@
 package com.quizapp.user_auth_service.service.impl;
 
+import com.quizapp.user_auth_service.dto.event.EmailEvent;
 import com.quizapp.user_auth_service.dto.request.UpdateUserRequest;
 import com.quizapp.user_auth_service.dto.request.UserRequest;
 import com.quizapp.user_auth_service.dto.response.PageResponse;
@@ -8,11 +9,13 @@ import com.quizapp.user_auth_service.exception.AppException;
 import com.quizapp.user_auth_service.exception.ErrorCode;
 import com.quizapp.user_auth_service.mapper.UserMapper;
 import com.quizapp.user_auth_service.model.User;
+import com.quizapp.user_auth_service.queue.EmailQueueProducer;
 import com.quizapp.user_auth_service.repository.UserRepository;
 import com.quizapp.user_auth_service.service.PasswordService;
 import com.quizapp.user_auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,10 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordService passwordService;
+    private final EmailQueueProducer emailQueueProducer;
+    
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Override
     public PageResponse<?> findByFullName(String fullName, int page, int size) {
@@ -51,14 +58,30 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toUser(userRequest);
         // Hash the password before saving
-        user.setPasswordHash(passwordService.hashPassword(userRequest.getPasswordHash()));
+        user.setPasswordHash(passwordService.hashPassword(userRequest.getPassword()));
         // Email is always verified when creating new user
         user.setEmailVerified(true);
         
+        // Save user
+        user = userRepository.save(user);
+        
+        // Send welcome email after successful registration (best effort - don't fail registration if email fails)
         try {
-            user = userRepository.save(user);
+            log.info("Sending welcome email to new user: {}", user.getEmail());
+            EmailEvent welcomeEvent = EmailEvent.create(
+                "user_registered",
+                user.getId(),
+                user.getEmail(),
+                "Welcome to Quiz App!",
+                null,
+                frontendUrl,
+                user.getFullName()
+            );
+            emailQueueProducer.publishEmailEvent(welcomeEvent);
+            log.info("Welcome email event published for user: {}", user.getEmail());
         } catch (Exception e) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+            // Log error but don't fail the registration
+            log.error("Failed to send welcome email for user {}, but registration succeeded: {}", user.getEmail(), e.getMessage());
         }
 
         return userMapper.toUserReponse(user);
@@ -72,8 +95,8 @@ public class UserServiceImpl implements UserService {
         user.setFullName(updateUserRequest.getFullName());
         user.setEmail(updateUserRequest.getEmail());
         // Hash the password if it's being updated
-        if (updateUserRequest.getPasswordHash() != null && !updateUserRequest.getPasswordHash().isEmpty()) {
-            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPasswordHash()));
+        if (updateUserRequest.getPassword() != null && !updateUserRequest.getPassword().isEmpty()) {
+            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPassword()));
         }
         user.setPhoneNumber(updateUserRequest.getPhoneNumber());
         user.setDateOfBirth(updateUserRequest.getDateOfBirth());
@@ -119,8 +142,8 @@ public class UserServiceImpl implements UserService {
         user.setDateOfBirth(updateUserRequest.getDateOfBirth());
         
         // Hash the password if it's being updated
-        if (updateUserRequest.getPasswordHash() != null && !updateUserRequest.getPasswordHash().isEmpty()) {
-            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPasswordHash()));
+        if (updateUserRequest.getPassword() != null && !updateUserRequest.getPassword().isEmpty()) {
+            user.setPasswordHash(passwordService.hashPassword(updateUserRequest.getPassword()));
         }
         
         user = userRepository.save(user);

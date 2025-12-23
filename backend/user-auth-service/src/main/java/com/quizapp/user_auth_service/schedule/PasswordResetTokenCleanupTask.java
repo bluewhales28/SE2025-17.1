@@ -18,9 +18,13 @@ public class PasswordResetTokenCleanupTask {
 	// Run every hour
 	@Scheduled(cron = "0 0 * * * *")
 	public void cleanExpiredTokens() {
-		long removed = tokenRepository.deleteByExpiresAtBefore(Instant.now());
-		if (removed > 0) {
-			log.info("Cleaned {} expired password reset tokens", removed);
+		try {
+			int removed = tokenRepository.deleteByExpiresAtBefore(Instant.now());
+			if (removed > 0) {
+				log.info("Cleaned {} expired password reset tokens", removed);
+			}
+		} catch (Exception e) {
+			log.error("Error cleaning expired password reset tokens", e);
 		}
 	}
 }

@@ -31,11 +31,9 @@ public class ClassController {
             throw new AppException(ErrorCode.UNAUTHORIZED, "User not authenticated or invalid token");
         }
         
-        // Check if user has permission to create class (only TEACHER or ADMIN)
-        String userRole = SecurityUtil.getCurrentUserRole();
-        if (userRole == null || (!userRole.equals("ROLE_TEACHER") && !userRole.equals("ROLE_ADMIN"))) {
-            throw new AppException(ErrorCode.FORBIDDEN, "Only teachers or administrators can create classes");
-        }
+        // Check if user has permission to create class (USER or ADMIN)
+        // If user is authenticated (has userId), allow creation
+        // Role check is handled by SecurityConfig - if authenticated, user can create
         
         ClassResponse response = classService.createClass(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)

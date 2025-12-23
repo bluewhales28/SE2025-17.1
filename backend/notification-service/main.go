@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"time"
 	"github.com/bluewhales28/notification-service/config"
 	"github.com/bluewhales28/notification-service/handlers"
 	"github.com/bluewhales28/notification-service/models"
@@ -42,30 +44,67 @@ func main() {
 
 	// Bắt đầu consumer RabbitMQ trong một goroutine riêng biệt
 	go func() {
-		consumer, err := services.NewConsumer(cfg.RabbitMQURL, "notification_events", db)
+		// Retry logic để đợi RabbitMQ sẵn sàng
+		var consumer *services.Consumer
+		var err error
+		maxRetries := 10
+		retryDelay := 5 // seconds
+		
+		for i := 0; i < maxRetries; i++ {
+			consumer, err = services.NewConsumer(cfg.RabbitMQURL, "notification_events", db)
+			if err == nil {
+				log.Printf("✅ Successfully connected to RabbitMQ")
+				break
+			}
+			log.Printf("⚠️  Failed to connect to RabbitMQ (attempt %d/%d): %v, retrying in %d seconds...", i+1, maxRetries, err, retryDelay)
+			time.Sleep(time.Duration(retryDelay) * time.Second)
+		}
+		
 		if err != nil {
-			log.Printf("Failed to create consumer: %v", err)
+			log.Printf("❌ Failed to create consumer after %d attempts: %v", maxRetries, err)
 			return
 		}
 		defer consumer.Close()
 
 		// Xử lý sự kiện từ hàng đợi
+		log.Printf("📨 Starting to listen for RabbitMQ events...")
 		consumer.Listen(func(event *models.Event) error {
+			log.Printf("📬 Received event: type=%s, user_id=%d", event.EventType, event.UserID)
+			
+			// Lấy thông tin từ data map (EmailEvent từ Java gửi các field vào data)
+			recipientEmail, _ := event.Data["recipient_email"].(string)
+			subject, _ := event.Data["subject"].(string)
+			userName, _ := event.Data["user_name"].(string)
+			
+			// Tạo title và content từ event
+			title := subject
+			if title == "" {
+				title = "Event: " + event.EventType
+			}
+			
+			content := "New event received"
+			if userName != "" {
+				content = fmt.Sprintf("Hello %s, you have a new notification", userName)
+			}
+			
 			// Tạo thông báo từ sự kiện
 			notification := models.Notification{
 				UserID:   event.UserID,
-				Type:     event.EventType,
-				Title:    "Event: " + event.EventType,
-				Content:  "New event received",
+				Type:     event.EventType, // VD: "user_registered", "password_reset"
+				Title:    title,
+				Content:  content,
 				Channel:  "email",
 				Status:   "pending",
-				Metadata: datatypes.JSONMap(event.Data),
+				Metadata: datatypes.JSONMap(event.Data), // Giữ nguyên data để worker có thể dùng
 			}
 
 			// Lưu thông báo vào cơ sở dữ liệu
 			if err := db.Create(&notification).Error; err != nil {
+				log.Printf("❌ Failed to create notification: %v", err)
 				return err
 			}
+			
+			log.Printf("✅ Notification created: ID=%d, type=%s, email=%s", notification.ID, notification.Type, recipientEmail)
 
 			// Gửi thông báo đến hồ bơi worker để xử lý
 			wp.SubmitJob(&notification)
@@ -105,9 +144,12 @@ func setupRouter(db *gorm.DB, wp *services.WorkerPool) *gin.Engine {
 	prefHandler := handlers.NewPreferenceHandler(db)
 	tmplHandler := handlers.NewTemplateHandler(db)
 
-	// Kiểm tra tình trạng sức khỏe
+	// Kiểm tra tình trạng sức khỏe (hỗ trợ cả GET và HEAD cho healthcheck)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+	router.HEAD("/health", func(c *gin.Context) {
+		c.Status(200)
 	})
 
 	// Tuyến thông báo

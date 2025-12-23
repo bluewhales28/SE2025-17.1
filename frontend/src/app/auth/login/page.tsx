@@ -7,10 +7,11 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import { LoginSchema, LoginSchemaType } from "@/lib/validate"
 import {
     Form,
@@ -23,7 +24,7 @@ import {
 
 export default function LoginPage() {
     const router = useRouter()
-    const { login, isLoading } = useAuth()
+    const { login, isLoading } = useAuthStore()
     const [showPassword, setShowPassword] = useState(false)
     const [globalError, setGlobalError] = useState("")
 
@@ -40,14 +41,14 @@ export default function LoginPage() {
         try {
             await login({
                 email: values.email,
-                passwordHash: values.password
+                password: values.password
             })
 
-            alert("Đăng nhập thành công!")
-            router.push("/")
+            toast.success("Đăng nhập thành công!")
+            router.push("/dashboard")
 
         } catch (err: any) {
-            setGlobalError(err.message || "Đăng nhập thất bại")
+            toast.error(err.message || "Đăng nhập thất bại")
         }
     }
 
@@ -132,7 +133,7 @@ export default function LoginPage() {
 
                             <div className="flex justify-end">
                                 <Link
-                                    href="/forgot-password"
+                                    href="/auth/forgot-password"
                                     className="text-base font-medium text-[#6B59CE] hover:underline"
                                 >
                                     Quên mật khẩu

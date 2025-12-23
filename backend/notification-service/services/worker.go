@@ -125,10 +125,15 @@ func (wp *WorkerPool) sendEmailNotification(notification *models.Notification) e
 	log.Printf("[Email] Template found: ID=%d, Name=%s", template.ID, template.Name)
 
 	// Hiển thị mẫu với nội dung thông báo
+	// Flatten metadata vào data map để template có thể truy cập trực tiếp
 	data := map[string]interface{}{
 		"Title":      notification.Title,
 		"Content":    notification.Content,
 		"Metadata":   notification.Metadata,
+	}
+	// Copy tất cả metadata keys ra ngoài để template dễ dùng
+	for key, value := range notification.Metadata {
+		data[key] = value
 	}
 
 	// Hiển thị tiêu đề và nội dung

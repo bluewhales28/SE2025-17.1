@@ -18,18 +18,30 @@ public class SecurityConfig {
         "/auth/logout",
         "/auth/refresh",
         "/auth/forgot-password",
+        "/auth/reset-password"
+    };
+    
+    private final String[] PUBLIC_POST_URL = {
+        "/auth/login",
+        "/auth/introspect",
+        "/auth/logout",
+        "/auth/refresh",
+        "/auth/forgot-password",
         "/auth/reset-password",
         "/users"
     };
+    
     private final CustomJwtDecoder jwtDecoder;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
+                .csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/auth/forgot-password", "/auth/reset-password").permitAll()
-                                .requestMatchers(HttpMethod.POST, PUBLIC_URL).permitAll()
+                                .requestMatchers(HttpMethod.POST, PUBLIC_POST_URL).permitAll()
+                                .requestMatchers("/error").permitAll()
+                                .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/users").hasAnyAuthority("SCOPE_user:read")
                                 .requestMatchers(HttpMethod.GET, "/users/all").hasAnyAuthority("SCOPE_admin:read")
                                 .requestMatchers(HttpMethod.GET, "/users/profile").authenticated()
@@ -37,19 +49,16 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.PUT, "/users/**").hasAnyAuthority("SCOPE_user:write", "SCOPE_admin:write")
                                 .requestMatchers(HttpMethod.DELETE, "/users/**").hasAnyAuthority("SCOPE_admin:delete")
                                 .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2ResourceServer ->
+                        oauth2ResourceServer
+                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder))
+                                .authenticationEntryPoint(new CustomJwtAuthentited())
+                )
+                .exceptionHandling(exceptionHandling ->
+                        exceptionHandling.accessDeniedHandler(new CustomAccessDeniedHandler())
                 );
 
-        // Cấu hình JWT resource server
-        httpSecurity.oauth2ResourceServer(oauth2ResourceServer ->
-                oauth2ResourceServer.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder)));
-
-        httpSecurity.exceptionHandling(exceptionHandling ->
-                exceptionHandling
-                        .accessDeniedHandler(new CustomAccessDeniedHandler())
-                        .authenticationEntryPoint(new CustomJwtAuthentited())
-        );
-
-        httpSecurity.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable());
         return httpSecurity.build();
     }
 
