@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from psycopg2 import errors
 from app.db.connection import get_db_connection
 from app.services.cache_service import CacheService
@@ -9,6 +9,56 @@ class AnalyticsService:
 
     def __init__(self):
         self.cache_service = CacheService()
+
+    def _fetch_attempts(self, quiz_id: Optional[int] = None, class_id: Optional[int] = None, user_id: Optional[int] = None) -> pd.DataFrame:
+        """
+        Lấy dữ liệu attempt từ các bảng hiện có (attempts + quizzes + assignments)
+        trả về các cột: user_id, class_id, quiz_id, topic, difficulty, score, total_score, submitted_at
+        """
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        filters = ["a.is_submitted = TRUE"]
+        params: list[Any] = []
+
+        if quiz_id is not None:
+            filters.append("a.quiz_id = %s")
+            params.append(quiz_id)
+        if class_id is not None:
+            filters.append("asg.class_id = %s")
+            params.append(class_id)
+        if user_id is not None:
+            filters.append("a.user_id = %s")
+            params.append(user_id)
+
+        where_clause = " WHERE " + " AND ".join(filters) if filters else ""
+
+        query = f"""
+            SELECT
+                a.user_id,
+                asg.class_id,
+                a.quiz_id,
+                q.topic,
+                q.difficulty,
+                a.score,
+                q.total_score,
+                COALESCE(a.end_time, a.start_time) AS submitted_at
+            FROM attempts a
+            JOIN quizzes q ON q.id = a.quiz_id
+            LEFT JOIN assignments asg ON asg.quiz_id = a.quiz_id
+            {where_clause}
+        """
+
+        try:
+            cur.execute(query, tuple(params))
+            rows = cur.fetchall()
+            df = pd.DataFrame(rows, columns=["user_id", "class_id", "quiz_id", "topic", "difficulty", "score", "total_score", "submitted_at"])
+        except Exception:
+            df = pd.DataFrame()
+        finally:
+            conn.close()
+
+        return df
     
     def _normalize_scores(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert score columns to numeric and remove invalid rows"""
@@ -27,25 +77,9 @@ class AnalyticsService:
             if cached:
                 return cached
 
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT user_id, score, total_score, topic, difficulty, submitted_at
-                FROM quiz_attempt_events
-                WHERE quiz_id = %s
-            """, (quiz_id,))
-            rows = cur.fetchall()
-        except errors.UndefinedTable:
-            # Chưa có bảng log attempt -> trả rỗng để tránh 500
-            conn.close()
+        df = self._fetch_attempts(quiz_id=quiz_id)
+        if df.empty:
             return {}
-        conn.close()
-
-        if not rows:
-            return {}
-
-        df = pd.DataFrame(rows)
         df = self._normalize_scores(df)
         
         if df.empty:
@@ -94,25 +128,9 @@ class AnalyticsService:
             cached = self.cache_service.get(cache_key)
             if cached:
                 return cached
-
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT quiz_id, score, total_score, topic, difficulty, submitted_at
-                FROM quiz_attempt_events
-                WHERE user_id = %s
-            """, (student_id,))
-            rows = cur.fetchall()
-        except errors.UndefinedTable:
-            conn.close()
+        df = self._fetch_attempts(user_id=student_id)
+        if df.empty:
             return {}
-        conn.close()
-
-        if not rows:
-            return {}
-
-        df = pd.DataFrame(rows)
         df = self._normalize_scores(df)
         
         if df.empty:
@@ -163,24 +181,9 @@ class AnalyticsService:
             if cached:
                 return cached
 
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT user_id, score, total_score, quiz_id, topic
-                FROM quiz_attempt_events
-                WHERE class_id = %s
-            """, (class_id,))
-            rows = cur.fetchall()
-        except errors.UndefinedTable:
-            conn.close()
+        df = self._fetch_attempts(class_id=class_id)
+        if df.empty:
             return {}
-        conn.close()
-
-        if not rows:
-            return {}
-
-        df = pd.DataFrame(rows)
         df = self._normalize_scores(df)
         
         if df.empty:
@@ -232,28 +235,16 @@ class AnalyticsService:
         else:
             class_avg = None
 
-        # System average (all quizzes)
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT AVG(score::float / total_score * 100) as system_avg
-                FROM quiz_attempt_events
-            """)
-            row = cur.fetchone()
-            system_avg = round(row["system_avg"], 2) if row and row["system_avg"] else 0
-        except errors.UndefinedTable:
-            conn.close()
-            return {
-                "student_id": student_id,
-                "student_avg": student_report.get("avg_score", 0),
-                "class_avg": class_avg,
-                "system_avg": 0,
-                "vs_class": round(student_report.get("avg_score", 0) - class_avg, 2) if class_avg else None,
-                "vs_system": student_report.get("avg_score", 0),
-                "percentile_vs_class": None
-            }
-        conn.close()
+        df_system = self._fetch_attempts()
+        if df_system.empty:
+            system_avg = 0
+        else:
+            df_system = self._normalize_scores(df_system)
+            if df_system.empty:
+                system_avg = 0
+            else:
+                df_system["percent"] = df_system["score"] / df_system["total_score"] * 100
+                system_avg = round(df_system["percent"].mean(), 2)
 
         student_avg = student_report.get("avg_score", 0)
 
@@ -269,32 +260,16 @@ class AnalyticsService:
 
     def _calculate_percentile(self, score: float, class_id: int) -> float:
         """Calculate student percentile in class"""
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("""
-                SELECT score, total_score
-                FROM quiz_attempt_events
-                WHERE class_id = %s
-            """, (class_id,))
-            rows = cur.fetchall()
-        except errors.UndefinedTable:
-            conn.close()
-            return 0
-        conn.close()
-
-        if not rows:
-            return 0
-
-        df = pd.DataFrame(rows)
-        df = self._normalize_scores(df)
-        
+        df = self._fetch_attempts(class_id=class_id)
         if df.empty:
             return 0
-        
+
+        df = self._normalize_scores(df)
+        if df.empty:
+            return 0
+
         df["percent"] = df["score"] / df["total_score"] * 100
-        
-        # Calculate percentile
+
         percentile = (df["percent"] < score).sum() / len(df) * 100
         return round(percentile, 2)
         
@@ -306,47 +281,37 @@ class AnalyticsService:
                 return cached
 
         conn = get_db_connection()
-
         query = """
-        SELECT score, total_score, user_id
-        FROM quiz_attempt_events qae
-        JOIN question_attempts qa ON qae.id = qa.attempt_id
-        WHERE qa.question_id = %s
+            SELECT
+                aa.is_correct::int as is_correct,
+                a.score,
+                q.total_score,
+                a.user_id
+            FROM attempt_answers aa
+            JOIN attempts a ON aa.attempt_id = a.id
+            JOIN questions qs ON qs.id = aa.question_id
+            JOIN quizzes q ON q.id = qs.quiz_id
+            WHERE aa.question_id = %s
+              AND a.is_submitted = TRUE
         """
         try:
             df = pd.read_sql(query, conn, params=(question_id,))
-        except errors.UndefinedTable:
+        except Exception:
             conn.close()
             return {"message": "No data"}
-        except Exception:
-            # Fallback if question_attempts table doesn't exist
-            query = """
-            SELECT score, total_score, user_id
-            FROM quiz_attempt_events
-            WHERE quiz_id IN (
-                SELECT quiz_id FROM questions WHERE id = %s
-            )
-            """
-            try:
-                df = pd.read_sql(query, conn, params=(question_id,))
-            except errors.UndefinedTable:
-                conn.close()
-                return {"message": "No data"}
-        
-        conn.close()
+        finally:
+            conn.close()
 
         if df.empty:
             return {"message": "No data"}
 
-        # Normalize scores (convert to numeric and remove invalid rows)
         df = self._normalize_scores(df)
-        
         if df.empty:
             return {"message": "No valid data"}
-        
-        # Calculate ratio safely
-        df["ratio"] = df["score"] / df["total_score"]
-        df["is_correct"] = (df["ratio"] >= 0.5).astype(int)
+
+        df["total_score"] = df["total_score"].replace(0, pd.NA)
+        df["ratio"] = (df["score"] / df["total_score"]).fillna(0)
+        df["is_correct"] = df["is_correct"].fillna((df["ratio"] >= 0.5).astype(int))
 
         correct_rate = df["is_correct"].mean()
         difficulty = 1 - correct_rate
