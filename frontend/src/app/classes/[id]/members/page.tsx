@@ -173,7 +173,7 @@ export default function ClassMembersPage() {
                                         {members.map((member) => (
                                             <TableRow key={member.id}>
                                                 <TableCell className="font-medium">
-                                                    {member.email || `User ${member.userId}`}
+                                                    {member.userName || member.email || `User ${member.userId}`}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant={member.role === "TEACHER" ? "default" : "secondary"}>
