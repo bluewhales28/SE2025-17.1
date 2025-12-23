@@ -17,8 +17,8 @@ export default function Home() {
     const token = Cookies.get("accessToken") || localStorage.getItem("accessToken");
 
     if (token) {
-      // Đã đăng nhập -> redirect về dashboard
-      router.push("/dashboard");
+      // Đã đăng nhập -> redirect về latest
+      router.push("/latest");
     }
   }, [router]);
 
