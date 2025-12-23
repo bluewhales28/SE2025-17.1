@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Menu, Home, BookOpen, Users, Bell, Copy, RefreshCw, Plus, Edit, Trash2, UserPlus } from "lucide-react"
+import { ArrowLeft, Menu, Home, BookOpen, Users, Bell, Copy, RefreshCw, Plus, Edit, Trash2, UserPlus, BarChart3 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +19,9 @@ export default function ClassDetailPage() {
     const { user, initializeUser } = useAuthStore()
     const { currentClass, isLoading, error, fetchClassById, deleteClass, regenerateInvitationCode } = useClassStore()
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+    const ANALYTICS_API_URL = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || "http://34.124.178.144:8085"
 
     useEffect(() => {
         initializeUser()
@@ -54,6 +57,25 @@ export default function ClassDetailPage() {
             toast.success("Tạo lại mã mời thành công!")
         } catch (err: any) {
             toast.error(err.message || "Tạo lại mã mời thất bại")
+        }
+    }
+
+    const handleAnalyzeClass = async () => {
+        if (!classId) return
+        setAnalyticsLoading(true)
+        try {
+            const res = await fetch(`${ANALYTICS_API_URL}/report/class/${classId}`)
+            if (!res.ok) {
+                const msg = await res.text()
+                throw new Error(msg || "Phân tích lớp học thất bại")
+            }
+            const data = await res.json().catch(() => null)
+            toast.success("Đã lấy báo cáo lớp học")
+            console.debug("Class analytics", data)
+        } catch (err: any) {
+            toast.error(err.message || "Phân tích lớp học thất bại")
+        } finally {
+            setAnalyticsLoading(false)
         }
     }
 
@@ -197,6 +219,14 @@ export default function ClassDetailPage() {
                                         >
                                             <Edit className="mr-2 h-4 w-4" />
                                             Chỉnh sửa
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={handleAnalyzeClass}
+                                            disabled={analyticsLoading}
+                                        >
+                                            <BarChart3 className="mr-2 h-4 w-4" />
+                                            {analyticsLoading ? "Đang phân tích..." : "Phân tích lớp học"}
                                         </Button>
                                         <Button
                                             variant="outline"
