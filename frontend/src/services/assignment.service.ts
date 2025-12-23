@@ -112,5 +112,20 @@ export const assignmentService = {
 
         return await response.json();
     },
+
+    async submitAssignment(assignmentId: number, data?: { score?: number; attemptId?: number }): Promise<ApiResponse<void>> {
+        const response = await fetch(`${API_BASE_URL}/assignments/${assignmentId}/submit`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: data ? JSON.stringify(data) : undefined,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: "Nộp bài thất bại" }));
+            throw new Error(error.message || error.detail || "Nộp bài thất bại");
+        }
+
+        return await response.json();
+    },
 };
 

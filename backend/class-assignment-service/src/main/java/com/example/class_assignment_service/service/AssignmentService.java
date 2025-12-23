@@ -3,6 +3,7 @@ package com.example.class_assignment_service.service;
 import com.example.class_assignment_service.client.NotificationServiceClient;
 import com.example.class_assignment_service.client.QuizServiceClient;
 import com.example.class_assignment_service.dto.request.CreateAssignmentRequest;
+import com.example.class_assignment_service.dto.request.SubmitAssignmentRequest;
 import com.example.class_assignment_service.dto.response.AssignmentResponse;
 import com.example.class_assignment_service.model.Assignment;
 import com.example.class_assignment_service.model.StudentProgress;
@@ -132,6 +133,33 @@ public class AssignmentService {
         progressRepository.save(progress);
         
         log.info("Progress score synced: {} with score {}", progressId, score);
+    }
+
+    @Transactional
+    public void submitAssignment(Long assignmentId, Long userId, SubmitAssignmentRequest request) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+            .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        permissionService.checkMemberAccess(assignment.getClassEntity().getId(), userId);
+
+        StudentProgress progress = progressRepository
+            .findByAssignmentIdAndStudentId(assignmentId, userId)
+            .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        progress.setStatus("SUBMITTED");
+        progress.setLastUpdated(LocalDateTime.now());
+
+        if (request != null) {
+            if (request.getAttemptId() != null) {
+                progress.setAttemptId(request.getAttemptId());
+            }
+            if (request.getScore() != null) {
+                progress.setScore(request.getScore().intValue());
+            }
+        }
+
+        progressRepository.save(progress);
+        log.info("Assignment submitted: {} by user: {}", assignmentId, userId);
     }
     
     @Transactional
