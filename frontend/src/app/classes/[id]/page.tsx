@@ -57,18 +57,27 @@ export default function ClassDetailPage() {
         }
     }
 
-    const copyInvitationCode = () => {
+    const copyInvitationCode = async () => {
         if (currentClass?.invitationCode) {
-            navigator.clipboard.writeText(currentClass.invitationCode)
-            toast.success("Đã sao chép mã mời!")
-        }
-    }
-
-    const copyInvitationLink = () => {
-        if (currentClass?.invitationLink) {
-            const fullLink = `${window.location.origin}${currentClass.invitationLink}`
-            navigator.clipboard.writeText(fullLink)
-            toast.success("Đã sao chép link mời!")
+            try {
+                await navigator.clipboard.writeText(currentClass.invitationCode)
+                toast.success("Đã sao chép mã mời!")
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea")
+                textArea.value = currentClass.invitationCode
+                textArea.style.position = "fixed"
+                textArea.style.opacity = "0"
+                document.body.appendChild(textArea)
+                textArea.select()
+                try {
+                    document.execCommand('copy')
+                    toast.success("Đã sao chép mã mời!")
+                } catch (e) {
+                    toast.error("Không thể sao chép mã mời")
+                }
+                document.body.removeChild(textArea)
+            }
         }
     }
 
@@ -266,14 +275,6 @@ export default function ClassDetailPage() {
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={copyInvitationLink}
-                                >
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Sao chép link mời
-                                </Button>
                             </CardContent>
                         </Card>
 
