@@ -246,13 +246,6 @@ GET    /quizzes/:id/result     - Xem kết quả
 * Check database health: `docker-compose ps`
 * Restart database: `docker-compose restart user-auth-db quiz-db notification-db`
 
-## Documentation
-
-* [Setup Guide](https://www.google.com/search?q=SETUP_GUIDE.md) - Hướng dẫn setup chi tiết
-* [Architecture Diagram](https://www.google.com/search?q=ARCHITECTURE_DIAGRAM.md) - Sơ đồ kiến trúc
-* [Database Migration](https://www.google.com/search?q=DATABASE_PER_SERVICE_MIGRATION.md) - Migration guide
-* [Test Credentials](https://www.google.com/search?q=TEST_CREDENTIALS.md) - Test accounts
-
 * *Video Demo:* 
   * https://drive.google.com/drive/folders/1MoJE76vzGAZUolf9X2cId5zkBZEiRolN?usp=drive_link
 
