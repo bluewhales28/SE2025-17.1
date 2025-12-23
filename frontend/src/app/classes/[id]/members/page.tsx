@@ -29,6 +29,7 @@ export default function ClassMembersPage() {
     const [members, setMembers] = useState<ClassMemberResponse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const isTeacher = currentClass?.userRole === "TEACHER"
 
     useEffect(() => {
         initializeUser()
@@ -37,9 +38,18 @@ export default function ClassMembersPage() {
     useEffect(() => {
         if (classId) {
             fetchClassById(classId)
-            loadMembers()
+            if (currentClass?.userRole === "TEACHER") {
+                loadMembers()
+            }
         }
-    }, [classId, fetchClassById])
+    }, [classId, fetchClassById, currentClass])
+
+    useEffect(() => {
+        if (currentClass && currentClass.userRole !== "TEACHER") {
+            toast.error("Chỉ giáo viên mới có quyền xem trang này")
+            router.push(`/classes/${classId}`)
+        }
+    }, [currentClass, classId, router])
 
     const loadMembers = async () => {
         setIsLoading(true)
@@ -170,7 +180,7 @@ export default function ClassMembersPage() {
                                                     {new Date(member.joinedAt).toLocaleDateString('vi-VN')}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    {member.role !== "TEACHER" && (
+                                                    {isTeacher && member.role !== "TEACHER" && (
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"

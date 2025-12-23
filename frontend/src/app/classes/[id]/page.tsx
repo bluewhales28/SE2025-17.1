@@ -189,23 +189,25 @@ export default function ClassDetailPage() {
                                         </CardDescription>
                                     )}
                                 </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => router.push(`/classes/${classId}/edit`)}
-                                    >
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Chỉnh sửa
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleDelete}
-                                        className="text-red-600 hover:text-red-700"
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Xóa
-                                    </Button>
-                                </div>
+                                {currentClass?.userRole === "TEACHER" && (
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => router.push(`/classes/${classId}/edit`)}
+                                        >
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Chỉnh sửa
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={handleDelete}
+                                            className="text-red-600 hover:text-red-700"
+                                        >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Xóa
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -278,32 +280,54 @@ export default function ClassDetailPage() {
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Quản lý</CardTitle>
-                                <CardDescription>
-                                    Quản lý thành viên và bài tập của lớp
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                                <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    onClick={() => router.push(`/classes/${classId}/members`)}
-                                >
-                                    <Users className="mr-2 h-4 w-4" />
-                                    Quản lý thành viên
-                                </Button>
-                                <Button
-                                    className="w-full"
-                                    variant="outline"
-                                    onClick={() => router.push(`/classes/${classId}/assignments`)}
-                                >
-                                    <BookOpen className="mr-2 h-4 w-4" />
-                                    Quản lý bài tập
-                                </Button>
-                            </CardContent>
-                        </Card>
+                        {currentClass?.userRole === "TEACHER" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Quản lý</CardTitle>
+                                    <CardDescription>
+                                        Quản lý thành viên và bài tập của lớp
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-2">
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                        onClick={() => router.push(`/classes/${classId}/members`)}
+                                    >
+                                        <Users className="mr-2 h-4 w-4" />
+                                        Quản lý thành viên
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                        onClick={() => router.push(`/classes/${classId}/assignments`)}
+                                    >
+                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        Quản lý bài tập
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+                        {currentClass?.userRole === "STUDENT" && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Bài tập</CardTitle>
+                                    <CardDescription>
+                                        Xem và làm các bài tập của lớp
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                        onClick={() => router.push(`/classes/${classId}/assignments`)}
+                                    >
+                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        Xem bài tập
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
                     {/* Placeholder for future content */}

@@ -15,6 +15,8 @@ export interface AssignmentResponse {
     maxScore?: number;
     createdAt: string;
     updatedAt: string;
+    userStatus?: "NOT_STARTED" | "IN_PROGRESS" | "SUBMITTED" | "OVERDUE"; // Status for current user
+    userAttemptCount?: number; // Number of attempts by current user
 }
 
 export interface CreateAssignmentRequest {

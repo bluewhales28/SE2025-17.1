@@ -30,6 +30,7 @@ export interface ClassResponse {
     updatedAt: string;
     memberCount: number;
     assignmentCount: number;
+    userRole?: "TEACHER" | "STUDENT"; // Role of current user in this class
 }
 
 export interface ApiResponse<T> {

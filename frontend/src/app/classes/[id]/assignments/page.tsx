@@ -50,6 +50,8 @@ export default function ClassAssignmentsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [statusFilter, setStatusFilter] = useState<"all" | "not_done" | "done">("all")
+    const isTeacher = currentClass?.userRole === "TEACHER"
     const [formData, setFormData] = useState<CreateAssignmentRequest>({
         classId: classId,
         quizId: 0,
@@ -186,18 +188,43 @@ export default function ClassAssignmentsPage() {
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Quay lại
                         </Button>
-                        <Button
-                            onClick={() => setCreateDialogOpen(true)}
-                            className="bg-[#6B59CE] hover:bg-[#5a4ab8]"
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Giao bài tập
-                        </Button>
+                        {isTeacher ? (
+                            <Button
+                                onClick={() => setCreateDialogOpen(true)}
+                                className="bg-[#6B59CE] hover:bg-[#5a4ab8]"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Giao bài tập
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={statusFilter === "all" ? "default" : "outline"}
+                                    onClick={() => setStatusFilter("all")}
+                                >
+                                    Tất cả
+                                </Button>
+                                <Button
+                                    variant={statusFilter === "not_done" ? "default" : "outline"}
+                                    onClick={() => setStatusFilter("not_done")}
+                                >
+                                    Chưa làm
+                                </Button>
+                                <Button
+                                    variant={statusFilter === "done" ? "default" : "outline"}
+                                    onClick={() => setStatusFilter("done")}
+                                >
+                                    Đã làm
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-2xl">Quản lý bài tập</CardTitle>
+                            <CardTitle className="text-2xl">
+                                {isTeacher ? "Quản lý bài tập" : "Bài tập"}
+                            </CardTitle>
                             {currentClass && (
                                 <CardDescription>Lớp: {currentClass.name}</CardDescription>
                             )}
@@ -211,68 +238,131 @@ export default function ClassAssignmentsPage() {
                                 <div className="text-center py-12">
                                     <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                                     <p className="text-gray-600 mb-4">Chưa có bài tập nào</p>
-                                    <Button
-                                        onClick={() => setCreateDialogOpen(true)}
-                                        className="bg-[#6B59CE] hover:bg-[#5a4ab8]"
-                                    >
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Giao bài tập đầu tiên
-                                    </Button>
+                                    {isTeacher && (
+                                        <Button
+                                            onClick={() => setCreateDialogOpen(true)}
+                                            className="bg-[#6B59CE] hover:bg-[#5a4ab8]"
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Giao bài tập đầu tiên
+                                        </Button>
+                                    )}
                                 </div>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Tiêu đề</TableHead>
-                                            <TableHead>Mô tả</TableHead>
-                                            <TableHead>Thời gian mở</TableHead>
-                                            <TableHead>Hạn nộp</TableHead>
-                                            <TableHead>Cho phép làm lại</TableHead>
-                                            <TableHead className="text-right">Thao tác</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {assignments.map((assignment) => (
-                                            <TableRow key={assignment.id}>
-                                                <TableCell className="font-medium">
-                                                    {assignment.title}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {assignment.description || "-"}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {new Date(assignment.openTime).toLocaleString('vi-VN')}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {new Date(assignment.deadline).toLocaleString('vi-VN')}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={assignment.allowRetake ? "default" : "secondary"}>
-                                                        {assignment.allowRetake ? "Có" : "Không"}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button variant="ghost" size="icon">
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
+                            ) : (() => {
+                                // Filter assignments based on status for STUDENT
+                                const filteredAssignments = isTeacher 
+                                    ? assignments 
+                                    : assignments.filter(assignment => {
+                                        if (statusFilter === "all") return true
+                                        if (statusFilter === "not_done") {
+                                            return !assignment.userStatus || 
+                                                   assignment.userStatus === "NOT_STARTED" || 
+                                                   assignment.userStatus === "IN_PROGRESS" ||
+                                                   assignment.userStatus === "OVERDUE"
+                                        }
+                                        if (statusFilter === "done") {
+                                            return assignment.userStatus === "SUBMITTED"
+                                        }
+                                        return true
+                                    })
+
+                                if (filteredAssignments.length === 0) {
+                                    return (
+                                        <div className="text-center py-12">
+                                            <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                            <p className="text-gray-600">Không có bài tập nào</p>
+                                        </div>
+                                    )
+                                }
+
+                                return (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Tiêu đề</TableHead>
+                                                <TableHead>Mô tả</TableHead>
+                                                <TableHead>Thời gian mở</TableHead>
+                                                <TableHead>Hạn nộp</TableHead>
+                                                {!isTeacher && <TableHead>Trạng thái</TableHead>}
+                                                {isTeacher && <TableHead>Cho phép làm lại</TableHead>}
+                                                <TableHead className="text-right">Thao tác</TableHead>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredAssignments.map((assignment) => (
+                                                <TableRow key={assignment.id}>
+                                                    <TableCell className="font-medium">
+                                                        {assignment.title}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {assignment.description || "-"}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Date(assignment.openTime).toLocaleString('vi-VN')}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Date(assignment.deadline).toLocaleString('vi-VN')}
+                                                    </TableCell>
+                                                    {!isTeacher && (
+                                                        <TableCell>
+                                                            <Badge variant={
+                                                                assignment.userStatus === "SUBMITTED" ? "default" :
+                                                                assignment.userStatus === "IN_PROGRESS" ? "secondary" :
+                                                                assignment.userStatus === "OVERDUE" ? "destructive" :
+                                                                "outline"
+                                                            }>
+                                                                {assignment.userStatus === "SUBMITTED" ? "Đã làm" :
+                                                                 assignment.userStatus === "IN_PROGRESS" ? "Đang làm" :
+                                                                 assignment.userStatus === "OVERDUE" ? "Quá hạn" :
+                                                                 "Chưa làm"}
+                                                            </Badge>
+                                                        </TableCell>
+                                                    )}
+                                                    {isTeacher && (
+                                                        <TableCell>
+                                                            <Badge variant={assignment.allowRetake ? "default" : "secondary"}>
+                                                                {assignment.allowRetake ? "Có" : "Không"}
+                                                            </Badge>
+                                                        </TableCell>
+                                                    )}
+                                                    <TableCell className="text-right">
+                                                        {isTeacher ? (
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button variant="ghost" size="icon">
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    // TODO: Navigate to do assignment
+                                                                    toast.info("Chức năng làm bài tập đang được phát triển")
+                                                                }}
+                                                                disabled={assignment.userStatus === "SUBMITTED" && !assignment.allowRetake}
+                                                            >
+                                                                {assignment.userStatus === "SUBMITTED" ? "Xem kết quả" : "Làm bài"}
+                                                            </Button>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )
+                            })()}
                         </CardContent>
                     </Card>
                 </div>
             </main>
 
-            {/* Create Assignment Dialog */}
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            {/* Create Assignment Dialog - Only for TEACHER */}
+            {isTeacher && (
+                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>Giao bài tập mới</DialogTitle>
@@ -395,6 +485,7 @@ export default function ClassAssignmentsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            )}
         </div>
     )
 }
