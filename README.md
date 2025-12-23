@@ -2,6 +2,88 @@
 
 Hệ thống thi trắc nghiệm trực tuyến với kiến trúc microservices
 
+## Mục tiêu & Định hướng (Goals & Objectives)
+
+### 1. Tầm nhìn sản phẩm
+
+- **Mục tiêu chính**: Xây dựng một nền tảng quiz & quản lý lớp học **đơn giản để dùng, dễ mở rộng, dễ vận hành**, phục vụ:
+  - Sinh viên / học sinh làm bài, xem điểm và tiến độ học tập.
+  - Giảng viên / giáo viên tạo đề, giao bài, theo dõi kết quả và điểm yếu của lớp.
+  - Admin quản lý hệ thống, cấu hình dịch vụ, theo dõi sức khỏe hệ thống.
+
+### 2. Mục tiêu nghiệp vụ (Business Objectives)
+
+- **Nâng cao chất lượng học tập**
+  - Cung cấp báo cáo chi tiết theo **học sinh, lớp, quiz, câu hỏi**.
+  - Giúp giáo viên nhanh chóng nhận diện **chủ đề/yếu tố học sinh yếu**, từ đó điều chỉnh nội dung giảng dạy.
+
+- **Tự động hoá quy trình**
+  - Tự động chấm điểm, tổng hợp kết quả, xuất **CSV/PDF**.
+  - Gửi thông báo kết quả, nhắc lịch, chứng chỉ qua **Notification Service**.
+  - Thiết kế sẵn cho việc chạy **job định kỳ** (weekly/monthly report, làm mới cache analytics).
+
+- **Sẵn sàng mở rộng**
+  - Kiến trúc microservices, mỗi service độc lập, có thể scale hoặc thay thế công nghệ riêng.
+  - Có thể bổ sung thêm service mới (ví dụ: Reporting Dashboard, Recommendation, LMS integration) mà không ảnh hưởng core.
+
+### 3. Mục tiêu kỹ thuật (Technical Objectives)
+
+- **Kiến trúc**
+  - Microservices rõ ràng: `user-auth-service`, `quiz-service`, `class-assignment-service`, `notification-service`, `analytics-statistic-service`, `frontend`, `nginx`.
+  - Mỗi service có **database riêng** (database-per-service), cô lập lỗi và linh hoạt công nghệ.
+  - Sử dụng **Nginx** làm API Gateway, chuẩn hóa entrypoint `/api/v1/...` cho frontend và client.
+
+- **Chất lượng & Bảo mật**
+  - Xác thực bằng **JWT**, tách riêng Auth Service.
+  - Thực hiện **code quality & security scan** tự động trong CI (Trivy, Gosec, SpotBugs, Checkstyle, flake8, bandit, safety…).
+  - Cấu hình CORS, bảo vệ endpoint public/private, tách vai trò (Student/Teacher/Admin) – hiện có thể nới lỏng cho demo Analytics.
+
+- **Hiệu năng & Khả năng mở rộng**
+  - Dùng **PostgreSQL** cho dữ liệu giao dịch, sẵn sàng tích hợp **Redis** cho cache.
+  - Analytics sử dụng **FastAPI + Pandas**, thiết kế sẵn luồng **cache / scheduled jobs** để tối ưu khi data lớn.
+
+- **Triển khai & Vận hành (Ops)**
+  - Toàn bộ hệ thống đóng gói bằng **Docker**; `docker-compose.yml` cho dev, `docker-compose.prod.yml` cho production.
+  - **CI/CD chuẩn hoá bằng GitHub Actions**:
+    - Mỗi service có workflow riêng dưới `.github/workflows/`.
+    - Tự động build, test, scan, build Docker, push image lên **GitHub Container Registry (GHCR)**.
+    - **Tự động deploy production** qua SSH tới server GCP (`34.135.81.236`) khi push lên `main` hoặc `quan`.
+  - Script deploy trên server xử lý:
+    - Pull code mới, ensure `.env` và `frontend/.env.production` đúng IP server.
+    - Đăng nhập GHCR, pull image đúng tag, dọn dẹp image cũ tránh lỗi snapshot.
+    - `docker compose -f docker-compose.prod.yml up -d <service>` và health check sau deploy.
+
+### 4. Phạm vi chức năng chính (Scope)
+
+- **User Auth Service**
+  - Đăng ký / đăng nhập, refresh token, quên mật khẩu, reset mật khẩu.
+  - Quản lý thông tin user, phân quyền cơ bản.
+
+- **Quiz Service**
+  - CRUD quiz & câu hỏi, gán quiz cho học sinh/lớp.
+  - Học sinh làm bài, nộp bài, tính điểm và lưu kết quả.
+
+- **Class Assignment Service**
+  - Quản lý lớp, danh sách thành viên, gán bài cho lớp.
+  - Theo dõi tiến độ hoàn thành trên từng lớp.
+
+- **Notification Service**
+  - Gửi email transactional: đăng ký, reset password, quiz được giao, kết quả quiz…
+  - Thiết kế sẵn để nhận event từ các service khác (ví dụ quiz_submitted, certificate_generated).
+
+- **Analytics & Statistic Service**
+  - Phân tích kết quả theo quiz, học sinh, lớp, câu hỏi.
+  - Tính toán các chỉ số thống kê (mean, median, percentiles, histogram…).
+  - Phân tích theo topic/difficulty để tìm điểm yếu.
+  - Xuất báo cáo CSV/PDF, nền tảng để sinh chứng chỉ.
+
+- **Frontend (Next.js)**
+  - Giao diện cho người dùng cuối: đăng nhập, làm bài, xem kết quả.
+  - Dashboard cho giáo viên / admin: quản lý quiz, lớp, xem analytics.
+  - Tích hợp tất cả API qua Nginx (`/api/v1/...`), có module **Analytics & Reports** với biểu đồ và bảng.
+
+> Tổng kết: README này mô tả hệ thống ở góc nhìn **mục tiêu sản phẩm + mục tiêu kỹ thuật**, đủ cho PM/Senior/Lead nắm nhanh được **vì sao hệ thống tồn tại, giải quyết bài toán gì, và được thiết kế như thế nào để dễ mở rộng và vận hành**.
+
 ## 📋 Tổng quan
 
 Ứng dụng quiz online cho phép giảng viên tạo bài thi, học sinh làm bài và nhận thông báo qua email. Được xây dựng theo kiến trúc microservices với database riêng biệt cho từng service.
