@@ -53,7 +53,7 @@ Hệ thống được thiết kế dựa trên các kịch bản sử dụng (Us
 * **System Analytics:** Quản lý Scoreboard và Ranking (Bảng xếp hạng).
 * **Class & Content:** Có quyền tham gia/quản lý quy trình đăng ký lớp học và nội dung bài thi của hệ thống.
 
-
+![Sơ đồ Quiz](docs/_MConverter.eu_quiz%20(1).png)
 ### 3. Technical Objectives
 
 **Kiến trúc**
@@ -252,6 +252,9 @@ GET    /quizzes/:id/result     - Xem kết quả
 * [Architecture Diagram](https://www.google.com/search?q=ARCHITECTURE_DIAGRAM.md) - Sơ đồ kiến trúc
 * [Database Migration](https://www.google.com/search?q=DATABASE_PER_SERVICE_MIGRATION.md) - Migration guide
 * [Test Credentials](https://www.google.com/search?q=TEST_CREDENTIALS.md) - Test accounts
+
+* *Video Demo:* 
+  * https://drive.google.com/drive/folders/1MoJE76vzGAZUolf9X2cId5zkBZEiRolN?usp=drive_link
 
 ## Contributors
 
