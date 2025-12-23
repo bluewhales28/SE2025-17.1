@@ -68,7 +68,7 @@ export default function QuizPage() {
     }
 
     useEffect(() => {
-        if (questions.length > 0 && quiz) {
+        if (Array.isArray(questions) && questions.length > 0 && quiz) {
             const filtered = questions.filter(q => q.quizId === quizId)
             setQuizQuestions(filtered)
         }
