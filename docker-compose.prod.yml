@@ -100,6 +100,48 @@ services:
       retries: 3
       start_period: 40s
 
+  analytics-service:
+    build:
+      context: ./backend/analytics-statistic-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
+      JWT_ALGORITHM: HS512
+      # ===== Database (dùng chung postgres) =====
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-quizz}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-password}
+
+      # ===== RabbitMQ =====
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+
+      # ===== Internal service URLs =====
+      AUTH_SERVICE_URL: http://user-auth-service:8082
+      QUIZ_SERVICE_URL: http://quiz-service:8083
+      CLASS_SERVICE_URL: http://class-assignment-service:8081
+
+      # ===== Redis =====
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # ===== Server =====
+      PORT: 8084
+    ports:
+      - "8085:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - app-network 
+
   # Class Assignment Service
   class-assignment-service:
     build:
