@@ -115,20 +115,61 @@ export default function HomePage() {
         }
     }, [emblaApiCompleted, completedQuizzes])
 
-    // Load completed quizzes from localStorage
+    // Load completed quizzes from localStorage theo user hiện tại
     useEffect(() => {
         const loadCompletedQuizzes = () => {
-            const stored = localStorage.getItem('completedQuizzes')
+            if (!user?.email) {
+                setCompletedQuizzes([])
+                return
+            }
+            
+            // Load completedQuizzes theo email của user hiện tại
+            const storageKey = `completedQuizzes_${user.email}`
+            const stored = localStorage.getItem(storageKey)
+            
             if (stored) {
-                setCompletedQuizzes(JSON.parse(stored))
+                try {
+                    setCompletedQuizzes(JSON.parse(stored))
+                } catch (err) {
+                    console.error('Error parsing completedQuizzes:', err)
+                    setCompletedQuizzes([])
+                }
+            } else {
+                // Nếu không có dữ liệu mới, kiểm tra dữ liệu cũ (backward compatibility)
+                const oldStored = localStorage.getItem('completedQuizzes')
+                if (oldStored) {
+                    try {
+                        const oldData = JSON.parse(oldStored)
+                        // Chỉ load nếu có dữ liệu và user đã đăng nhập
+                        if (oldData.length > 0 && user) {
+                            // Migrate sang key mới
+                            localStorage.setItem(storageKey, oldStored)
+                            localStorage.removeItem('completedQuizzes')
+                            setCompletedQuizzes(oldData)
+                        } else {
+                            setCompletedQuizzes([])
+                        }
+                    } catch (err) {
+                        console.error('Error parsing old completedQuizzes:', err)
+                        setCompletedQuizzes([])
+                    }
+                } else {
+                    setCompletedQuizzes([])
+                }
             }
         }
+        
         loadCompletedQuizzes()
 
         // Refresh on storage change (when quiz is completed in another tab)
-        window.addEventListener('storage', loadCompletedQuizzes)
-        return () => window.removeEventListener('storage', loadCompletedQuizzes)
-    }, [])
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === `completedQuizzes_${user?.email}` || e.key === 'completedQuizzes') {
+                loadCompletedQuizzes()
+            }
+        }
+        window.addEventListener('storage', handleStorageChange)
+        return () => window.removeEventListener('storage', handleStorageChange)
+    }, [user])
 
     // Initialize user on mount
     useEffect(() => {

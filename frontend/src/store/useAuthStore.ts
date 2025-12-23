@@ -17,7 +17,7 @@ interface AuthState {
     setError: (error: string | null) => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     isLoading: false,
     error: null,
@@ -41,6 +41,25 @@ export const useAuthStore = create<AuthState>((set) => ({
 
                 const userInfo = getUserInfoFromToken(response.data.token)
                 console.log('🔐 Login - User Info:', userInfo)
+                
+                // Xóa completedQuizzes của các user khác (để tránh hiển thị dữ liệu của user khác)
+                // Chỉ giữ lại completedQuizzes của user hiện tại
+                if (userInfo?.email) {
+                    const currentUserKey = `completedQuizzes_${userInfo.email}`
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('completedQuizzes') && key !== currentUserKey) {
+                            localStorage.removeItem(key)
+                        }
+                    })
+                } else {
+                    // Nếu không có email, xóa tất cả completedQuizzes để đảm bảo an toàn
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('completedQuizzes')) {
+                            localStorage.removeItem(key)
+                        }
+                    })
+                }
+                
                 set({ user: userInfo, isLoading: false })
             }
             return response
@@ -66,6 +85,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     logout: async () => {
         set({ isLoading: true })
+        const currentUser = get().user
         try {
             const token = Cookies.get('accessToken') || localStorage.getItem('accessToken')
             if (token) {
@@ -74,8 +94,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         } catch (err: any) {
             console.error('Logout API error:', err)
         } finally {
+            // Xóa token
             Cookies.remove('accessToken')
             localStorage.removeItem('accessToken')
+            
+            // Xóa completedQuizzes của user hiện tại
+            if (currentUser?.email) {
+                localStorage.removeItem(`completedQuizzes_${currentUser.email}`)
+            }
+            
+            // Xóa tất cả completedQuizzes keys cũ (backward compatibility)
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('completedQuizzes')) {
+                    localStorage.removeItem(key)
+                }
+            })
+            
             set({ user: null, isLoading: false })
             window.location.href = '/'
         }
