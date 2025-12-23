@@ -45,7 +45,7 @@ export default function ClassAssignmentsPage() {
     const classId = Number(params.id)
     const { user, initializeUser } = useAuthStore()
     const { currentClass, fetchClassById } = useClassStore()
-    const { quizzes, fetchQuizzes } = useQuizStore()
+    const { quizzes, fetchQuizzes, error: quizError, isLoading: isLoadingQuizzes } = useQuizStore()
     const [assignments, setAssignments] = useState<AssignmentResponse[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -69,7 +69,10 @@ export default function ClassAssignmentsPage() {
         if (classId) {
             fetchClassById(classId)
             loadAssignments()
-            fetchQuizzes()
+            fetchQuizzes().catch(() => {
+                // Silently handle error - don't show toast
+                // Error will be available in quizError state
+            })
         }
     }, [classId, fetchClassById, fetchQuizzes])
 
@@ -280,21 +283,36 @@ export default function ClassAssignmentsPage() {
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="quiz">Chọn Quiz *</Label>
-                            <Select
-                                value={formData.quizId.toString()}
-                                onValueChange={(value) => setFormData({ ...formData, quizId: parseInt(value) })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn quiz" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {quizzes.map((quiz) => (
-                                        <SelectItem key={quiz.id} value={quiz.id.toString()}>
-                                            {quiz.title}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            {isLoadingQuizzes ? (
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#6B59CE]"></div>
+                                    Đang tải danh sách quiz...
+                                </div>
+                            ) : quizError ? (
+                                <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
+                                    Không thể tải danh sách quiz. Vui lòng thử lại sau.
+                                </div>
+                            ) : quizzes.length === 0 ? (
+                                <div className="text-sm text-yellow-600 bg-yellow-50 p-3 rounded">
+                                    Chưa có quiz nào. Vui lòng tạo quiz trước khi giao bài tập.
+                                </div>
+                            ) : (
+                                <Select
+                                    value={formData.quizId > 0 ? formData.quizId.toString() : ""}
+                                    onValueChange={(value) => setFormData({ ...formData, quizId: parseInt(value) })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Chọn quiz" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {quizzes.map((quiz) => (
+                                            <SelectItem key={quiz.id} value={quiz.id.toString()}>
+                                                {quiz.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="title">Tiêu đề *</Label>
@@ -370,6 +388,7 @@ export default function ClassAssignmentsPage() {
                         <Button
                             onClick={handleCreateAssignment}
                             className="bg-[#6B59CE] hover:bg-[#5a4ab8]"
+                            disabled={quizzes.length === 0 || isLoadingQuizzes || !!quizError}
                         >
                             Tạo bài tập
                         </Button>
