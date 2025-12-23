@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Menu, Home, BookOpen, Users, Bell, Copy, RefreshCw, Plus, Edit, Trash2, UserPlus } from "lucide-react"
+import { ArrowLeft, Menu, Home, BookOpen, Users, Bell, Copy, RefreshCw, Plus, Edit, Trash2, UserPlus, BarChart3 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -304,6 +304,14 @@ export default function ClassDetailPage() {
                                     >
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Quản lý bài tập
+                                    </Button>
+                                    <Button
+                                        className="w-full"
+                                        variant="outline"
+                                        onClick={() => router.push(`/analytics/class/${classId}`)}
+                                    >
+                                        <BarChart3 className="mr-2 h-4 w-4" />
+                                        Phân tích lớp học
                                     </Button>
                                 </CardContent>
                             </Card>
