@@ -201,11 +201,27 @@ jobs:
               echo ".env file already exists, skipping creation."
             fi
             
-            # Pull image with branch tag
+            # Pull image with branch tag (cleanup any partial snapshots)
             BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
+            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || true
+            docker image prune -f || true
             echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || {
-              echo "Image not found, waiting for CI/CD to finish..."
+              echo "Image not found for tag ${BRANCH_TAG}. Ensure CI build & push completed."
+              exit 1
+            }
+            
+            # Tag as :dev for docker-compose compatibility
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
+            # Pull image with branch tag (cleanup any partial snapshots)
+            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
+            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || true
+            docker image prune -f || true
+            echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || {
+              echo "Image not found for tag ${BRANCH_TAG}. Ensure CI build & push completed."
               exit 1
             }
             

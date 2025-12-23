@@ -206,6 +206,9 @@ jobs:
           script: |
             echo "Deploying Analytics Service to Development..."
             cd /opt/quiz-platform
+            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev"
+            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev || true
+            docker image prune -f || true
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
             docker-compose up -d analytics-service
             docker-compose ps analytics-service
