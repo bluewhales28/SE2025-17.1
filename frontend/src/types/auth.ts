@@ -1,6 +1,6 @@
 export interface AuthRequest {
     email: string;
-    passwordHash: string;
+    password: string;
 }
 
 export interface AuthResponse {
@@ -16,7 +16,7 @@ export interface ApiResponse<T> {
 
 export interface RegisterRequest {
     email: string;
-    passwordHash: string;
+    password: string;
     fullName: string;
     phoneNumber: string;
     dateOfBirth: string; // YYYY-MM-DD

@@ -7,10 +7,11 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuthStore } from "@/store/useAuthStore"
 import { RegisterSchema, RegisterSchemaType } from "@/lib/validate"
 import {
     Form,
@@ -23,7 +24,7 @@ import {
 
 export default function RegisterPage() {
     const router = useRouter()
-    const { register, isLoading } = useAuth()
+    const { register, isLoading } = useAuthStore()
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [globalError, setGlobalError] = useState("")
@@ -46,7 +47,7 @@ export default function RegisterPage() {
         try {
             await register({
                 email: values.email,
-                passwordHash: values.password,
+                password: values.password,
                 fullName: values.fullName,
                 phoneNumber: values.phoneNumber,
                 dateOfBirth: values.dateOfBirth,
@@ -54,11 +55,11 @@ export default function RegisterPage() {
                 role: "USER"
             })
 
-            alert("Đăng ký thành công! Vui lòng đăng nhập.")
+            toast.success("Đăng ký thành công! Vui lòng đăng nhập.")
             router.push("/auth/login")
 
         } catch (err: any) {
-            setGlobalError(err.message || "Đăng ký thất bại")
+            toast.error(err.message || "Đăng ký thất bại")
         }
     }
 

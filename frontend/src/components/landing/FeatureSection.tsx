@@ -1,3 +1,5 @@
+"use client"
+
 import { FeatureCard } from "./FeatureCard";
 import { SectionWrapper } from "@/components/common/SectionWrapper";
 import { FadeIn } from "@/components/animations/FadeIn";
@@ -11,6 +13,7 @@ export function FeatureSection() {
                         title="Sports"
                         description="The only way to prove you are a good sport is to lose."
                         buttonText="Let's Play"
+                        imageSrc="/images/sport.png"
                         colorClass="bg-[#50E3C2]"
                     />
                 </FadeIn>
@@ -19,6 +22,7 @@ export function FeatureSection() {
                         title="Future is Now"
                         description="Sufficiently advanced technology is indistinguishable from magic."
                         buttonText="Explore"
+                        imageSrc="/images/food.png"
                         colorClass="bg-[#5856D6]"
                     />
                 </FadeIn>
@@ -27,6 +31,7 @@ export function FeatureSection() {
                         title="Food"
                         description="How we eat food is as important as what we eat"
                         buttonText="Let's Play"
+                        imageSrc="/images/space.png"
                         colorClass="bg-[#FF5E57]"
                     />
                 </FadeIn>

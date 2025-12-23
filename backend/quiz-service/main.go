@@ -25,7 +25,11 @@ func main() {
 
 	questions := r.Group("/questions")
 	{
+		questions.GET("", handlers.GetQuestions)
 		questions.POST("", handlers.CreateQuestion)
+		questions.GET("/:id", handlers.GetQuestion)
+		questions.PUT("/:id", handlers.UpdateQuestion)
+		questions.DELETE("/:id", handlers.DeleteQuestion)
 	}
 
 	port := os.Getenv("PORT")

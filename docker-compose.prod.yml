@@ -1,0 +1,220 @@
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_AUTH_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_QUIZ_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_NOTIFICATION_API_URL=http://34.124.178.144/api/v1
+      - NEXT_PUBLIC_API_URL=http://34.124.178.144/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+
+  # User Auth Service
+  user-auth-service:
+    build:
+      context: ./backend/user-auth-service
+      dockerfile: Dockerfile
+    container_name: user-auth-service
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-quizz}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - JWT_SECRET=${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
+      - APP_FRONTEND_URL=${FRONTEND_URL:-http://34.124.178.144}
+    ports:
+      - "8082:8082"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Quiz Service
+  quiz-service:
+    build:
+      context: ./backend/quiz-service
+      dockerfile: Dockerfile
+    container_name: quiz-service
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-quizz}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+    ports:
+      - "8083:8083"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-quizz}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Quiz App}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Class Assignment Service
+  class-assignment-service:
+    build:
+      context: ./backend/class-assignment-service
+      dockerfile: Dockerfile
+    container_name: class-assignment-service
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-quizz}
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-guest}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-guest}
+      - JWT_SECRET=${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
+      - APP_SERVICES_QUIZ_SERVICE_URL=http://quiz-service:8083
+      - APP_SERVICES_NOTIFICATION_SERVICE_URL=http://notification-service:8080
+      - APP_SERVICES_AUTH_SERVICE_URL=http://user-auth-service:8082
+    ports:
+      - "8084:8084"
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Reverse Proxy
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      - frontend
+      - user-auth-service
+      - quiz-service
+      - notification-service
+      - class-assignment-service
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-quizz}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/quiz-service/db:/docker-entrypoint-initdb.d/quiz_service_db:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${DB_NAME:-quizz}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    volumes:
+      - redis_data:/data
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:

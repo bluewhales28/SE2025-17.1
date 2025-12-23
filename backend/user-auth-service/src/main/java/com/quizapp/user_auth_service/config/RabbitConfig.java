@@ -1,6 +1,6 @@
 package com.quizapp.user_auth_service.config;
 
-import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -9,6 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Configuration
 @Slf4j
@@ -19,7 +22,10 @@ public class RabbitConfig {
 
 	@Bean
 	public MessageConverter jacksonMessageConverter() {
-		return new Jackson2JsonMessageConverter();
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		return new Jackson2JsonMessageConverter(objectMapper);
 	}
 
 	@Bean
@@ -43,8 +49,8 @@ public class RabbitConfig {
 
 	// Ensure the exchange exists so publish does not fail if notification service hasn't declared it yet
 	@Bean
-	public DirectExchange notificationExchange() {
-		return new DirectExchange(notificationExchangeName, true, false);
+	public TopicExchange notificationExchange() {
+		return new TopicExchange(notificationExchangeName, true, false);
 	}
 }
 

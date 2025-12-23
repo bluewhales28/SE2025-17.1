@@ -45,7 +45,7 @@ public class AuthenticationServiceImpl {
         User user = userRepository.findByEmail(authRequest.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        if (!passwordService.verifyPassword(authRequest.getPasswordHash(), user.getPasswordHash())) {
+        if (!passwordService.verifyPassword(authRequest.getPassword(), user.getPasswordHash())) {
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 

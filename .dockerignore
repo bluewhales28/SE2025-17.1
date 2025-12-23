@@ -1,0 +1,82 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Tests
+*_test.go
+test/
+tests/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+coverage/
+.nyc_output/
+
+# Build artifacts
+target/
+build/
+dist/
+out/
+
+# Dependencies (will be installed in container)
+node_modules/
+.next/
+.turbo/
+
+# Environment files (will be mounted)
+.env*
+!.env.example
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+azure-pipelines.yml
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Backend specific
+backend/**/*.class
+backend/**/target/
+backend/**/.mvn/
+backend/**/mvnw*
+
+# Frontend specific
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+frontend/.turbo/
+frontend/.vercel/
