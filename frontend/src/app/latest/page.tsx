@@ -104,10 +104,12 @@ export default function HomePage() {
 
     // Reinit carousel when quizzes change
     useEffect(() => {
-        if (emblaApi && quizzes.length > 0) {
+        const completedQuizIds = new Set(completedQuizzes.map(q => q.quizId))
+        const availableQuizzes = quizzes.filter(quiz => !completedQuizIds.has(quiz.id))
+        if (emblaApi && availableQuizzes.length > 0) {
             emblaApi.reInit()
         }
-    }, [emblaApi, quizzes])
+    }, [emblaApi, quizzes, completedQuizzes])
 
     useEffect(() => {
         if (emblaApiCompleted && completedQuizzes.length > 0) {
@@ -115,20 +117,68 @@ export default function HomePage() {
         }
     }, [emblaApiCompleted, completedQuizzes])
 
-    // Load completed quizzes from localStorage
+    // Load completed quizzes from localStorage theo user hiện tại
     useEffect(() => {
         const loadCompletedQuizzes = () => {
-            const stored = localStorage.getItem('completedQuizzes')
+            if (!user?.email) {
+                console.log('📭 No user email, clearing completedQuizzes')
+                setCompletedQuizzes([])
+                return
+            }
+            
+            // Load completedQuizzes theo email của user hiện tại
+            const storageKey = `completedQuizzes_${user.email}`
+            console.log('🔍 Loading completedQuizzes for:', user.email, 'Key:', storageKey)
+            const stored = localStorage.getItem(storageKey)
+            
             if (stored) {
-                setCompletedQuizzes(JSON.parse(stored))
+                try {
+                    const parsed = JSON.parse(stored)
+                    console.log('✅ Loaded completedQuizzes:', parsed.length, 'quizzes')
+                    setCompletedQuizzes(parsed)
+                } catch (err) {
+                    console.error('❌ Error parsing completedQuizzes:', err)
+                    setCompletedQuizzes([])
+                }
+            } else {
+                console.log('📭 No completedQuizzes found for user:', user.email)
+                // Nếu không có dữ liệu mới, kiểm tra dữ liệu cũ (backward compatibility)
+                const oldStored = localStorage.getItem('completedQuizzes')
+                if (oldStored) {
+                    try {
+                        const oldData = JSON.parse(oldStored)
+                        // Chỉ load nếu có dữ liệu và user đã đăng nhập
+                        if (oldData.length > 0 && user) {
+                            // Migrate sang key mới
+                            console.log('🔄 Migrating old completedQuizzes to new key')
+                            localStorage.setItem(storageKey, oldStored)
+                            localStorage.removeItem('completedQuizzes')
+                            setCompletedQuizzes(oldData)
+                        } else {
+                            setCompletedQuizzes([])
+                        }
+                    } catch (err) {
+                        console.error('❌ Error parsing old completedQuizzes:', err)
+                        setCompletedQuizzes([])
+                    }
+                } else {
+                    setCompletedQuizzes([])
+                }
             }
         }
+        
         loadCompletedQuizzes()
 
         // Refresh on storage change (when quiz is completed in another tab)
-        window.addEventListener('storage', loadCompletedQuizzes)
-        return () => window.removeEventListener('storage', loadCompletedQuizzes)
-    }, [])
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === `completedQuizzes_${user?.email}` || e.key === 'completedQuizzes') {
+                console.log('🔄 Storage changed, reloading completedQuizzes')
+                loadCompletedQuizzes()
+            }
+        }
+        window.addEventListener('storage', handleStorageChange)
+        return () => window.removeEventListener('storage', handleStorageChange)
+    }, [user])
 
     // Initialize user on mount
     useEffect(() => {
@@ -140,8 +190,14 @@ export default function HomePage() {
         fetchQuizzes()
     }, [fetchQuizzes])
 
+    // Filter quizzes: chỉ hiển thị quiz chưa làm
+    const completedQuizIds = new Set(completedQuizzes.map(q => q.quizId))
+    const availableQuizzes = quizzes.filter(quiz => !completedQuizIds.has(quiz.id))
+
     // Debug log
     console.log('👤 Current User:', user)
+    console.log('✅ Completed Quiz IDs:', Array.from(completedQuizIds))
+    console.log('📚 Available Quizzes:', availableQuizzes.length)
 
     const handleLogout = async () => {
         try {
@@ -406,14 +462,16 @@ export default function HomePage() {
                             <div className="flex items-center justify-center py-12">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6B59CE]"></div>
                             </div>
-                        ) : !quizzes || quizzes.length === 0 ? (
+                        ) : !availableQuizzes || availableQuizzes.length === 0 ? (
                             <Card>
                                 <CardContent className="py-12 text-center text-gray-500">
-                                    Chưa có quiz nào
+                                    {completedQuizzes.length > 0 
+                                        ? "Bạn đã hoàn thành tất cả quiz có sẵn! 🎉"
+                                        : "Chưa có quiz nào"}
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="relative" key={`carousel-${quizzes.length}`}>
+                            <div className="relative" key={`carousel-${availableQuizzes.length}`}>
                                 {/* Navigation Buttons */}
                                 {canScrollPrev && (
                                     <Button
@@ -439,7 +497,7 @@ export default function HomePage() {
                                 {/* Carousel */}
                                 <div className="overflow-hidden" ref={emblaRef}>
                                     <div className="flex gap-4">
-                                        {quizzes.map((quiz) => (
+                                        {availableQuizzes.map((quiz) => (
                                             <div key={quiz.id} className="flex-[0_0_100%] min-w-0 md:flex-[0_0_calc(50%-8px)] lg:flex-[0_0_calc(33.333%-11px)]">
                                                 <Card
                                                     className="hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 h-full"

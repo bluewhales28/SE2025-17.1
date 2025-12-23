@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { useQuizStore } from "@/store/useQuizStore"
 import { useQuestionStore } from "@/store/useQuestionStore"
+import { useAuthStore } from "@/store/useAuthStore"
 import { toast } from "sonner"
 import { assignmentService } from "@/services/assignment.service"
 
@@ -20,6 +21,7 @@ export default function QuizPage() {
 
     const { getQuizById } = useQuizStore()
     const { questions, fetchQuestions } = useQuestionStore()
+    const { user } = useAuthStore()
 
     const [quiz, setQuiz] = useState<any>(null)
     const [quizQuestions, setQuizQuestions] = useState<any[]>([])
@@ -124,8 +126,14 @@ export default function QuizPage() {
         setScore(finalScore)
         setIsSubmitted(true)
 
-        // Lưu cục bộ cho mục tiêu hiển thị nhanh
-        const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes') || '[]')
+        // Lưu cục bộ cho mục tiêu hiển thị nhanh - theo email của user hiện tại
+        if (!user?.email) {
+            toast.error("Không thể lưu kết quả: Chưa đăng nhập")
+            return
+        }
+
+        const storageKey = `completedQuizzes_${user.email}`
+        const completedQuizzes = JSON.parse(localStorage.getItem(storageKey) || '[]')
         const quizResult = {
             quizId: quiz.id,
             quizTitle: quiz.title,
@@ -138,7 +146,7 @@ export default function QuizPage() {
 
         const filtered = completedQuizzes.filter((q: any) => q.quizId !== quiz.id)
         filtered.unshift(quizResult)
-        localStorage.setItem('completedQuizzes', JSON.stringify(filtered))
+        localStorage.setItem(storageKey, JSON.stringify(filtered))
 
         // Đồng bộ trạng thái bài tập
         if (assignmentId) {

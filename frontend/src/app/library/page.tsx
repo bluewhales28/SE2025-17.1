@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, Pencil, Trash2, FileQuestion, Users, BookOpen } from "lucide-react"
 import { AppHeader } from "@/components/common/AppHeader"
+import { Sidebar } from "@/components/common/Sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -85,7 +86,13 @@ export default function LibraryPage() {
         }
     }
 
+    const canManageQuiz = user?.role === "ADMIN" || user?.role === "TEACHER"
+
     const handleDelete = async (id: number) => {
+        if (!canManageQuiz) {
+            toast.error("Bạn không có quyền xóa quiz này")
+            return
+        }
         if (confirm("Bạn có chắc chắn muốn xóa quiz này? Tất cả câu hỏi trong quiz cũng sẽ bị xóa.")) {
             try {
                 await deleteQuiz(id)
@@ -180,26 +187,7 @@ export default function LibraryPage() {
 
             {/* Sidebar */}
             <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r overflow-y-auto transition-transform duration-300 ease-in-out z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <nav className="px-4 py-4 space-y-2">
-                    <Link href="/latest" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg text-base">
-                        <Home className="w-6 h-6" />
-                        Trang chủ
-                    </Link>
-                    <Link href="/library" className="flex items-center gap-3 px-4 py-3 text-[#6B59CE] bg-purple-50 rounded-lg font-medium text-base">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        Thư viện của bạn
-                    </Link>
-                    <Link href="/classes" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg text-base">
-                        <Users className="w-6 h-6" />
-                        Lớp học của bạn
-                    </Link>
-                    <Link href="/notifications" className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg text-base">
-                        <Bell className="w-6 h-6" />
-                        Thông báo
-                    </Link>
-                </nav>
+                <Sidebar />
             </aside>
 
             {/* Overlay */}
@@ -366,21 +354,25 @@ export default function LibraryPage() {
                                                             <TableCell>{quiz.timeLimit}m</TableCell>
                                                             <TableCell className="text-right">
                                                                 <div className="flex items-center justify-end gap-2">
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => handleManageQuestions(quiz.id)}
-                                                                        className="text-[#6B59CE] hover:text-[#5a4ab8]"
-                                                                    >
-                                                                        <FileQuestion className="h-4 w-4 mr-1" />
-                                                                        Câu hỏi
-                                                                    </Button>
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuiz(quiz.id)}>
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(quiz.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
+                                                                    {canManageQuiz && (
+                                                                        <>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={() => handleManageQuestions(quiz.id)}
+                                                                                className="text-[#6B59CE] hover:text-[#5a4ab8]"
+                                                                            >
+                                                                                <FileQuestion className="h-4 w-4 mr-1" />
+                                                                                Câu hỏi
+                                                                            </Button>
+                                                                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuiz(quiz.id)}>
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Button>
+                                                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(quiz.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </TableCell>
                                                         </TableRow>
@@ -438,10 +430,12 @@ export default function LibraryPage() {
                                     className="pl-10"
                                 />
                             </div>
-                            <Button onClick={handleOpenCreateQuestion} className="bg-[#6B59CE] hover:bg-[#5a4ab8]">
-                                <Plus className="w-4 h-4 mr-1" />
-                                Thêm
-                            </Button>
+                            {canManageQuiz && (
+                                <Button onClick={handleOpenCreateQuestion} className="bg-[#6B59CE] hover:bg-[#5a4ab8]">
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Thêm
+                                </Button>
+                            )}
                         </div>
 
                         {questionsLoading ? (
@@ -483,17 +477,21 @@ export default function LibraryPage() {
                                                 <TableCell>{question.points}</TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuestion(question.id)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDeleteQuestion(question.id)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        {canManageQuiz && (
+                                                            <>
+                                                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuestion(question.id)}>
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => handleDeleteQuestion(question.id)}
+                                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
