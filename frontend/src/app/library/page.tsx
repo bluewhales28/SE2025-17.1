@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, Pencil, Trash2, FileQuestion, Users, BookOpen } from "lucide-react"
+import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, Pencil, Trash2, FileQuestion } from "lucide-react"
+import { AppHeader } from "@/components/common/AppHeader"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -141,7 +142,7 @@ export default function LibraryPage() {
         fetchQuestions()
     }
 
-    const toggleDarkMode = () => {
+    const toggleDarkMode: () => void = () => {
         setDarkMode(!darkMode)
         toast.success(darkMode ? "Chế độ sáng" : "Chế độ tối")
     }
@@ -173,80 +174,7 @@ export default function LibraryPage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="bg-white border-b sticky top-0 z-50">
-                <div className="px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Left Section */}
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="hover:bg-gray-100"
-                            >
-                                <Menu className="h-6 w-6" />
-                            </Button>
-                            <Link href="/" className="flex items-center">
-                                <div className="text-2xl font-bold text-[#6B59CE]">
-                                    <span className="bg-[#6B59CE] text-white px-2 py-1 rounded">Q</span>
-                                </div>
-                            </Link>
-                        </div>
-
-                        {/* Center Section - Search */}
-                        <div className="flex-1 max-w-3xl mx-4">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <Input
-                                    type="text"
-                                    placeholder={activeTab === "classes" ? "Tìm kiếm lớp học..." : "Tìm kiếm quiz..."}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-gray-50 border-gray-200 focus-visible:ring-[#6B59CE] text-base"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Right Section */}
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon">
-                                <Plus className="h-6 w-6" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                                <Bell className="h-6 w-6" />
-                            </Button>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Avatar className="h-10 w-10 cursor-pointer">
-                                        <AvatarImage src="/images/avatar.jpg" alt="User" />
-                                        <AvatarFallback className="bg-[#6B59CE] text-white">
-                                            {user?.email?.[0].toUpperCase() || 'U'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
-                                        <Settings className="mr-2 h-5 w-5" />
-                                        <span>Cài đặt</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={toggleDarkMode} className="cursor-pointer">
-                                        {darkMode ? <Sun className="mr-2 h-5 w-5" /> : <Moon className="mr-2 h-5 w-5" />}
-                                        <span>{darkMode ? "Chế độ sáng" : "Chế độ tối"}</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
-                                        <LogOut className="mr-2 h-5 w-5" />
-                                        <span>Đăng xuất</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <AppHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} darkMode={darkMode} toggleDarkMode={toggleDarkMode} searchQuery={searchQuery} />
 
             {/* Sidebar */}
             <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r overflow-y-auto transition-transform duration-300 ease-in-out z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -531,7 +459,7 @@ export default function LibraryPage() {
                                             <TableHead>Nội dung</TableHead>
                                             <TableHead className="w-[120px]">Loại</TableHead>
                                             <TableHead className="w-[100px]">Độ khó</TableHead>
-                                            <TableHead className="w-[80px]">Điểm</TableHead>
+                                            <TableHead className="w-20">Điểm</TableHead>
                                             <TableHead className="w-[120px] text-right">Hành động</TableHead>
                                         </TableRow>
                                     </TableHeader>

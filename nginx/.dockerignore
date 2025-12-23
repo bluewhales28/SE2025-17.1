@@ -1,0 +1,13 @@
+# Ignore everything except nginx.conf
+.git
+.gitignore
+*.log
+*.md
+.DS_Store
+.env
+*.swp
+.idea
+.vscode
+*.iml
+*.bak
+*.tmp
