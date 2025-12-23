@@ -35,20 +35,24 @@ export default function ClassMembersPage() {
         initializeUser()
     }, [initializeUser])
 
+    // Fetch class info once when id changes
     useEffect(() => {
         if (classId) {
             fetchClassById(classId)
-            if (currentClass?.userRole === "TEACHER") {
-                loadMembers()
-            }
         }
-    }, [classId, fetchClassById, currentClass])
+    }, [classId, fetchClassById])
 
+    // React when class info is loaded: guard role and load members
     useEffect(() => {
-        if (currentClass && currentClass.userRole !== "TEACHER") {
+        if (!currentClass) return
+
+        if (currentClass.userRole !== "TEACHER") {
             toast.error("Chỉ giáo viên mới có quyền xem trang này")
             router.push(`/classes/${classId}`)
+            return
         }
+
+        loadMembers()
     }, [currentClass, classId, router])
 
     const loadMembers = async () => {
