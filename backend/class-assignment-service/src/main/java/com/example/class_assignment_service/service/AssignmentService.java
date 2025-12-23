@@ -134,6 +134,23 @@ public class AssignmentService {
         log.info("Progress score synced: {} with score {}", progressId, score);
     }
     
+    @Transactional
+    public void deleteAssignment(Long assignmentId, Long userId) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+            .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+        
+        permissionService.checkTeacherOrTA(assignment.getClassEntity().getId(), userId);
+        
+        // Delete all related student progress
+        List<StudentProgress> progressList = progressRepository.findByAssignmentId(assignmentId);
+        progressRepository.deleteAll(progressList);
+        
+        // Delete the assignment
+        assignmentRepository.delete(assignment);
+        
+        log.info("Assignment deleted: {} by user: {}", assignmentId, userId);
+    }
+    
     private void notifyStudentsAboutNewAssignment(Long classId, Assignment assignment) {
         List<ClassMember> students = classMemberRepository.findByClassEntityIdAndRole(classId, ClassRole.STUDENT);
         

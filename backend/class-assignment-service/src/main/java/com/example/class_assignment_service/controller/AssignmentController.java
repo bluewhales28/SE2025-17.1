@@ -50,5 +50,12 @@ public class AssignmentController {
         assignmentService.startAssignment(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Assignment started", null));
     }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAssignment(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        assignmentService.deleteAssignment(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Assignment deleted successfully", null));
+    }
 }
 

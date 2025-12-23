@@ -52,6 +52,8 @@ export default function ClassAssignmentsPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false)
     const [statusFilter, setStatusFilter] = useState<"all" | "not_done" | "done">("all")
     const isTeacher = currentClass?.userRole === "TEACHER"
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+    const [assignmentToDelete, setAssignmentToDelete] = useState<AssignmentResponse | null>(null)
     const [formData, setFormData] = useState<CreateAssignmentRequest>({
         classId: classId,
         quizId: 0,
@@ -123,6 +125,25 @@ export default function ClassAssignmentsPage() {
             loadAssignments()
         } catch (err: any) {
             toast.error(err.message || "Tạo bài tập thất bại")
+        }
+    }
+
+    const handleDeleteClick = (assignment: AssignmentResponse) => {
+        setAssignmentToDelete(assignment)
+        setDeleteDialogOpen(true)
+    }
+
+    const handleDeleteConfirm = async () => {
+        if (!assignmentToDelete) return
+
+        try {
+            await assignmentService.deleteAssignment(assignmentToDelete.id)
+            toast.success("Xóa bài tập thành công!")
+            setDeleteDialogOpen(false)
+            setAssignmentToDelete(null)
+            loadAssignments()
+        } catch (err: any) {
+            toast.error(err.message || "Xóa bài tập thất bại")
         }
     }
 
@@ -331,7 +352,12 @@ export default function ClassAssignmentsPage() {
                                                                 <Button variant="ghost" size="icon">
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
-                                                                <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700">
+                                                                <Button 
+                                                                    variant="ghost" 
+                                                                    size="icon" 
+                                                                    className="text-red-600 hover:text-red-700"
+                                                                    onClick={() => handleDeleteClick(assignment)}
+                                                                >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </div>
@@ -486,6 +512,35 @@ export default function ClassAssignmentsPage() {
                 </DialogContent>
             </Dialog>
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Xác nhận xóa bài tập</DialogTitle>
+                        <DialogDescription>
+                            Bạn có chắc chắn muốn xóa bài tập "{assignmentToDelete?.title}"? Hành động này không thể hoàn tác.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteDialogOpen(false)
+                                setAssignmentToDelete(null)
+                            }}
+                        >
+                            Hủy
+                        </Button>
+                        <Button
+                            onClick={handleDeleteConfirm}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            Xóa
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

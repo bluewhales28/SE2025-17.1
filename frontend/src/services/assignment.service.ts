@@ -84,5 +84,19 @@ export const assignmentService = {
 
         return await response.json();
     },
+
+    async deleteAssignment(assignmentId: number): Promise<ApiResponse<void>> {
+        const response = await fetch(`${API_BASE_URL}/assignments/${assignmentId}`, {
+            method: "DELETE",
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: "Xóa bài tập thất bại" }));
+            throw new Error(error.message || error.detail || "Xóa bài tập thất bại");
+        }
+
+        return await response.json();
+    },
 };
 
