@@ -3,8 +3,7 @@ name: Quiz Service CI/CD
 on:
   push:
     branches:
-      - main
-      - dev
+      - quan
     paths:
       - 'backend/quiz-service/**'
       - '.github/workflows/quiz-service-ci-cd.yml'

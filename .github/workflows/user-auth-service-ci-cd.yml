@@ -3,8 +3,7 @@ name: User Auth Service CI/CD
 on:
   push:
     branches:
-      - main
-      - dev
+      - quan
     paths:
       - 'backend/user-auth-service/**'
       - '.github/workflows/user-auth-service-ci-cd.yml'

@@ -3,8 +3,7 @@ name: Class Assignment Service CI/CD
 on:
   push:
     branches:
-      - main
-      - dev
+      - quan
     paths:
       - 'backend/class-assignment-service/**'
       - '.github/workflows/class-assignment-service-ci-cd.yml'

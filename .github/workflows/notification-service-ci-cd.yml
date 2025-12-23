@@ -3,8 +3,7 @@ name: Notification Service CI/CD
 on:
   push:
     branches:
-      - main
-      - dev
+      - quan
     paths:
       - 'backend/notification-service/**'
       - '.github/workflows/notification-service-ci-cd.yml'
