@@ -108,7 +108,7 @@ services:
     restart: unless-stopped
     environment:
       JWT_SECRET: ${JWT_SECRET:-5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b}
-      JWT_ALGORITHM: HS512
+      JWT_ALGORITHM: HS256
       # ===== Database (dùng chung postgres) =====
       DB_HOST: postgres
       DB_PORT: 5432
@@ -122,7 +122,8 @@ services:
       # ===== Internal service URLs =====
       AUTH_SERVICE_URL: http://user-auth-service:8082
       QUIZ_SERVICE_URL: http://quiz-service:8083
-      CLASS_SERVICE_URL: http://class-assignment-service:8081
+      CLASS_SERVICE_URL: http://class-assignment-service:8084
+      NOTIFICATION_SERVICE_URL: http://notification-service:8080
 
       # ===== Redis =====
       REDIS_HOST: redis
