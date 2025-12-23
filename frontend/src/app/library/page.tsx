@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, Pencil, Trash2, FileQuestion } from "lucide-react"
+import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, Home, Pencil, Trash2, FileQuestion, Users, BookOpen } from "lucide-react"
 import { AppHeader } from "@/components/common/AppHeader"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
