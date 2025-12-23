@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+export const dynamic = "force-dynamic"
+
+import { Suspense, useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Search, Plus, Bell, Menu, Home, Users, BookOpen, Copy, MoreVertical, Edit, Trash2, RefreshCw, LogOut, User } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,18 +23,29 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { useClassStore } from "@/store/useClassStore"
 import { toast } from "sonner"
 import { ClassResponse } from "@/types/class"
+import { JoinClassDialog } from "@/components/JoinClassDialog"
 
-export default function ClassesPage() {
+function ClassesPageContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { user, logout, initializeUser } = useAuthStore()
     const { classes, isLoading, error, fetchClasses, deleteClass, regenerateInvitationCode } = useClassStore()
     const [searchQuery, setSearchQuery] = useState("")
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [roleFilter, setRoleFilter] = useState<"TEACHER" | "STUDENT" | undefined>(undefined)
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
 
     useEffect(() => {
         initializeUser()
     }, [initializeUser])
+
+    // Set initial role filter based on query param (?role=TEACHER or ?role=STUDENT)
+    useEffect(() => {
+        const role = searchParams.get("role")
+        if (role === "TEACHER" || role === "STUDENT") {
+            setRoleFilter(role)
+        }
+    }, [searchParams])
 
     useEffect(() => {
         fetchClasses(roleFilter)
@@ -114,7 +127,7 @@ export default function ClassesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
                         <Plus className="h-5 w-5" />
                     </Button>
                     <Button variant="ghost" size="icon">
@@ -331,7 +344,16 @@ export default function ClassesPage() {
                     )}
                 </div>
             </main>
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
+    )
+}
+
+export default function ClassesPage() {
+    return (
+        <Suspense fallback={<div className="p-6">Đang tải...</div>}>
+            <ClassesPageContent />
+        </Suspense>
     )
 }
 

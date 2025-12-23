@@ -26,5 +26,6 @@ public class ClassResponse {
     private LocalDateTime updatedAt;
     private Integer memberCount;
     private Integer assignmentCount;
+    private String userRole; // Role of current user in this class: TEACHER or STUDENT
 }
 

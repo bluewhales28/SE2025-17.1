@@ -10,6 +10,7 @@ import com.example.class_assignment_service.repository.ClassMemberRepository;
 import com.example.class_assignment_service.repository.ClassRepository;
 import com.example.class_assignment_service.exception.AppException;
 import com.example.class_assignment_service.exception.ErrorCode;
+import com.example.class_assignment_service.client.UserServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class ClassMemberService {
     private final ClassMemberRepository classMemberRepository;
     private final ClassRepository classRepository;
     private final PermissionService permissionService;
+    private final UserServiceClient userServiceClient;
     
     @Transactional
     public ClassMemberResponse addMember(Long classId, AddMemberRequest request, Long userId) {
@@ -106,11 +108,13 @@ public class ClassMemberService {
     }
     
     private ClassMemberResponse toResponse(ClassMember member) {
+        String userName = userServiceClient.getUserNameById(member.getUserId());
         return ClassMemberResponse.builder()
             .id(member.getId())
             .classId(member.getClassEntity().getId())
             .className(member.getClassEntity().getName())
             .userId(member.getUserId())
+            .userName(userName)
             .role(com.example.class_assignment_service.model.enums.MemberRole.valueOf(member.getRole().name()))
             .joinedAt(member.getJoinedAt())
             .isActive(true)

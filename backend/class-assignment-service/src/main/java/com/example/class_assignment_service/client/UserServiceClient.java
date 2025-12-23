@@ -177,6 +177,35 @@ public class UserServiceClient {
             return null;
         }
     }
+
+    /**
+     * Get full name from database by userId
+     */
+    public String getUserNameById(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        try {
+            log.debug("Querying database for full_name by userId: {}", userId);
+            String sql = "SELECT full_name FROM users WHERE id = ? LIMIT 1";
+            String name = jdbcTemplate.queryForObject(sql, String.class, userId);
+
+            if (name != null) {
+                log.debug("Retrieved full_name {} for userId: {}", name, userId);
+                return name;
+            }
+
+            log.warn("User name not found in database for userId: {}", userId);
+            return null;
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            log.warn("User not found in database for userId: {}", userId);
+            return null;
+        } catch (Exception e) {
+            log.error("Failed to get user name from database for userId {}: {}", userId, e.getMessage());
+            return null;
+        }
+    }
     
     public record UserInfo(Long id, String email, String name) {}
 }

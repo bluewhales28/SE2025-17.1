@@ -41,8 +41,13 @@ export const useQuestionStore = create<QuestionState>((set, get) => ({
     fetchQuestions: async () => {
         set({ isLoading: true, error: null })
         try {
-            const questions = await questionService.getQuestions()
-            set({ questions, isLoading: false })
+            const res = await questionService.getQuestions()
+            const normalized = Array.isArray(res)
+                ? res
+                : (res as any)?.data && Array.isArray((res as any).data)
+                    ? (res as any).data
+                    : []
+            set({ questions: normalized, isLoading: false })
         } catch (err: any) {
             const errorMessage = err.message || 'Không thể tải danh sách câu hỏi'
             console.error('Error fetching questions:', err)

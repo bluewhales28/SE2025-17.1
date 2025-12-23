@@ -45,6 +45,33 @@ func GetQuiz(c *gin.Context) {
 	c.JSON(http.StatusOK, quiz)
 }
 
+// Delete quiz (cascade delete questions & answers)
+func DeleteQuiz(c *gin.Context) {
+	id := c.Param("id")
+	var quiz models.Quiz
+
+	if err := db.DB.Preload("Questions.Answers").First(&quiz, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Quiz not found"})
+		return
+	}
+
+	// Delete answers of all questions in this quiz
+	db.DB.Where("question_id IN (?)",
+		db.DB.Table("questions").Select("id").Where("quiz_id = ?", quiz.ID),
+	).Delete(&models.Answer{})
+
+	// Delete questions
+	db.DB.Where("quiz_id = ?", quiz.ID).Delete(&models.Question{})
+
+	// Delete quiz
+	if err := db.DB.Delete(&quiz).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Quiz deleted successfully"})
+}
+
 // Get all questions
 func GetQuestions(c *gin.Context) {
 	var questions []models.Question

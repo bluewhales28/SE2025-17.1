@@ -19,9 +19,13 @@ public interface ClassRepository extends JpaRepository<ClassEntity, Long> {
     List<ClassEntity> findByUserId(@Param("userId") Long userId);
     
     // Find classes by role filter
-    @Query("SELECT DISTINCT c FROM ClassEntity c LEFT JOIN c.members m WHERE " +
-           "(:role = 'TEACHER' AND (c.teacherId = :userId OR (m.userId = :userId AND m.role = :role))) OR " +
-           "(:role != 'TEACHER' AND m.userId = :userId AND m.role = :role)")
+    // For TEACHER: classes where user is teacher (by teacher_id) OR member with TEACHER role
+    // For STUDENT: classes where user is member with STUDENT role
+    @Query("SELECT DISTINCT c FROM ClassEntity c " +
+           "LEFT JOIN c.members m " +
+           "WHERE " +
+           "(:role = 'TEACHER' AND (c.teacherId = :userId OR (m.userId = :userId AND m.role = com.example.class_assignment_service.model.enums.ClassRole.TEACHER))) OR " +
+           "(:role = 'STUDENT' AND m.userId = :userId AND m.role = com.example.class_assignment_service.model.enums.ClassRole.STUDENT)")
     List<ClassEntity> findByUserIdAndRole(@Param("userId") Long userId, @Param("role") String role);
     
     List<ClassEntity> findByStatus(String status);

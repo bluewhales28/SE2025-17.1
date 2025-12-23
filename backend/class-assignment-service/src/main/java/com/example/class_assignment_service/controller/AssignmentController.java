@@ -1,6 +1,7 @@
 package com.example.class_assignment_service.controller;
 
 import com.example.class_assignment_service.dto.request.CreateAssignmentRequest;
+import com.example.class_assignment_service.dto.request.SubmitAssignmentRequest;
 import com.example.class_assignment_service.dto.response.ApiResponse;
 import com.example.class_assignment_service.dto.response.AssignmentResponse;
 import com.example.class_assignment_service.service.AssignmentService;
@@ -49,6 +50,22 @@ public class AssignmentController {
         Long userId = SecurityUtil.getCurrentUserId();
         assignmentService.startAssignment(id, userId);
         return ResponseEntity.ok(ApiResponse.success("Assignment started", null));
+    }
+
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<ApiResponse<Object>> submitAssignment(
+            @PathVariable Long id,
+            @RequestBody(required = false) SubmitAssignmentRequest request) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        assignmentService.submitAssignment(id, userId, request);
+        return ResponseEntity.ok(ApiResponse.success("Assignment submitted", null));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAssignment(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        assignmentService.deleteAssignment(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Assignment deleted successfully", null));
     }
 }
 

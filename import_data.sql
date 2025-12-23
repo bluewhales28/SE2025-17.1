@@ -257,12 +257,12 @@ BEGIN
         (5, 5, 'STUDENT');
         
         -- Insert assignments
-        INSERT INTO assignments (class_id, quiz_id, title, description, start_time, due_time, allow_multiple_attempts, max_score) VALUES
-        (1, 1, 'Weekly Math Quiz', 'Complete this quiz by Friday', NOW(), NOW() + INTERVAL '7 days', TRUE, 100),
-        (2, 2, 'Physics Midterm', 'Midterm examination', NOW(), NOW() + INTERVAL '3 days', FALSE, 150),
-        (3, 3, 'Grammar Assessment', 'Weekly grammar check', NOW(), NOW() + INTERVAL '5 days', TRUE, 80),
-        (4, 4, 'CS Basics Assignment', 'Complete the CS basics quiz', NOW(), NOW() + INTERVAL '10 days', TRUE, 120),
-        (5, 5, 'History Quiz Assignment', 'World history quiz', NOW(), NOW() + INTERVAL '6 days', TRUE, 90);
+        INSERT INTO assignments (class_id, quiz_id, title, description, start_time, due_time, allow_multiple_attempts, max_score, max_attempts) VALUES
+        (1, 1, 'Weekly Math Quiz', 'Complete this quiz by Friday', NOW(), NOW() + INTERVAL '7 days', TRUE, 100, 3),
+        (2, 2, 'Physics Midterm', 'Midterm examination', NOW(), NOW() + INTERVAL '3 days', FALSE, 150, 1),
+        (3, 3, 'Grammar Assessment', 'Weekly grammar check', NOW(), NOW() + INTERVAL '5 days', TRUE, 80, 2),
+        (4, 4, 'CS Basics Assignment', 'Complete the CS basics quiz', NOW(), NOW() + INTERVAL '10 days', TRUE, 120, 2),
+        (5, 5, 'History Quiz Assignment', 'World history quiz', NOW(), NOW() + INTERVAL '6 days', TRUE, 90, 2);
         
         -- Insert student progress
         INSERT INTO student_progress (assignment_id, student_id, status, score) VALUES
