@@ -163,7 +163,7 @@ export default function ClassMembersPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Email</TableHead>
+                                            <TableHead>Họ tên</TableHead>
                                             <TableHead>Vai trò</TableHead>
                                             <TableHead>Ngày tham gia</TableHead>
                                             <TableHead className="text-right">Thao tác</TableHead>
