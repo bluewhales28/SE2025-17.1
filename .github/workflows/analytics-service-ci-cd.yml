@@ -8,6 +8,7 @@ on:
     paths:
       - 'backend/analytics-statistic-service/**'
       - '.github/workflows/analytics-service-ci-cd.yml'
+      - '.github/test-ci-cd-trigger.md'
   pull_request:
     branches:
       - main
