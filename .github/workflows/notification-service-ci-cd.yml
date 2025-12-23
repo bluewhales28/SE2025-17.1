@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - quan
     paths:
       - 'backend/notification-service/**'
       - '.github/workflows/notification-service-ci-cd.yml'

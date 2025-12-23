@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - quan
     paths:
       - 'backend/class-assignment-service/**'
       - '.github/workflows/class-assignment-service-ci-cd.yml'

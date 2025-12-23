@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - quan
     paths:
       - 'backend/quiz-service/**'
       - '.github/workflows/quiz-service-ci-cd.yml'
