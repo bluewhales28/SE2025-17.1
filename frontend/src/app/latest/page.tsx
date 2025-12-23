@@ -4,19 +4,11 @@ import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, BarChart3, User, Clock, Target, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Plus, Bell, Menu, Settings, LogOut, Moon, Sun, BarChart3, User, Clock, Target, ChevronLeft, ChevronRight, Command } from "lucide-react"
 import useEmblaCarousel from 'embla-carousel-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { AppHeader } from "@/components/common/AppHeader"
 import {
     Card,
     CardContent,
@@ -189,72 +181,7 @@ export default function HomePage() {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="bg-white border-b sticky top-0 z-50">
-                <div className="px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Left Section - Menu & Logo */}
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="hover:bg-gray-100"
-                            >
-                                <Menu className="h-6 w-6" />
-                            </Button>
-                            <Link href="/" className="flex items-center">
-                                <div className="text-2xl font-bold text-[#6B59CE]">
-                                    <span className="bg-[#6B59CE] text-white px-2 py-1 rounded">Q</span>
-                                </div>
-                            </Link>
-                        </div>
-
-                        {/* Center Section - removed search bar */}
-                        <div className="flex-1" />
-
-                        {/* Right Section - Actions & Profile */}
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
-                                <Plus className="h-6 w-6" />
-                            </Button>
-                            <Button variant="ghost" size="icon">
-                                <Bell className="h-6 w-6" />
-                            </Button>
-
-                            {/* User Avatar Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Avatar className="h-10 w-10 cursor-pointer">
-                                        <AvatarImage src="/images/avatar.jpg" alt="User" />
-                                        <AvatarFallback className="bg-[#6B59CE] text-white">U</AvatarFallback>
-                                    </Avatar>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer">
-                                        <Settings className="mr-2 h-5 w-5" />
-                                        <span>Cài đặt</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={toggleDarkMode} className="cursor-pointer">
-                                        {darkMode ? (
-                                            <Sun className="mr-2 h-5 w-5" />
-                                        ) : (
-                                            <Moon className="mr-2 h-5 w-5" />
-                                        )}
-                                        <span>{darkMode ? "Chế độ sáng" : "Chế độ tối"}</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
-                                        <LogOut className="mr-2 h-5 w-5" />
-                                        <span>Đăng xuất</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <AppHeader sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} darkMode={darkMode} toggleDarkMode={toggleDarkMode} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
             {/* Sidebar */}
             <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r overflow-y-auto transition-transform duration-300 ease-in-out z-40 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -437,8 +364,8 @@ export default function HomePage() {
                                                                 </div>
                                                             </div>
                                                             <div className={`px-3 py-1 rounded-full text-sm font-medium ${(completed.score / completed.totalPoints) >= 0.8 ? 'bg-green-100 text-green-700' :
-                                                                    (completed.score / completed.totalPoints) >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
-                                                                        'bg-red-100 text-red-700'
+                                                                (completed.score / completed.totalPoints) >= 0.5 ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
                                                                 }`}>
                                                                 {(completed.score / completed.totalPoints) >= 0.8 ? '✨ Xuất sắc' :
                                                                     (completed.score / completed.totalPoints) >= 0.5 ? '👍 Khá' : '💪 Cố lên'}

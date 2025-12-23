@@ -45,7 +45,7 @@ export default function LoginPage() {
             })
 
             toast.success("Đăng nhập thành công!")
-            router.push("/dashboard")
+            router.push("/latest")
 
         } catch (err: any) {
             toast.error(err.message || "Đăng nhập thất bại")

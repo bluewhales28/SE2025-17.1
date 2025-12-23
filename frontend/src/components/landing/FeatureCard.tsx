@@ -30,8 +30,8 @@ export function FeatureCard({
         const token = Cookies.get("accessToken") || localStorage.getItem("accessToken");
 
         if (token) {
-            // Đã đăng nhập -> chuyển về dashboard
-            router.push("/dashboard");
+            // Đã đăng nhập -> chuyển về latest
+            router.push("/latest");
         } else {
             // Chưa đăng nhập -> chuyển về trang đăng nhập
             router.push("/auth/login");
