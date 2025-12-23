@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState } from "react";
 import { toast } from "sonner";
+import { JoinClassDialog } from "@/components/JoinClassDialog";
 
 interface AppHeaderProps {
     sidebarOpen: boolean;
@@ -20,6 +24,7 @@ interface AppHeaderProps {
 export function AppHeader({ sidebarOpen, setSidebarOpen, darkMode, toggleDarkMode, searchQuery, setSearchQuery }: AppHeaderProps) {
     const router = useRouter();
     const { logout, user } = useAuthStore();
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false);
 
     const handleLogout = async () => {
         try {
@@ -69,7 +74,7 @@ export function AppHeader({ sidebarOpen, setSidebarOpen, darkMode, toggleDarkMod
 
                     {/* Right Section - Actions & Profile */}
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
                             <Plus className="h-6 w-6" />
                         </Button>
                         <Button variant="ghost" size="icon">
@@ -109,6 +114,7 @@ export function AppHeader({ sidebarOpen, setSidebarOpen, darkMode, toggleDarkMod
                     </div>
                 </div>
             </div>
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </header>
     );
 }

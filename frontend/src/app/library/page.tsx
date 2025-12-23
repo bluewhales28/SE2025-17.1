@@ -86,7 +86,13 @@ export default function LibraryPage() {
         }
     }
 
+    const canManageQuiz = user?.role === "ADMIN" || user?.role === "TEACHER"
+
     const handleDelete = async (id: number) => {
+        if (!canManageQuiz) {
+            toast.error("Bạn không có quyền xóa quiz này")
+            return
+        }
         if (confirm("Bạn có chắc chắn muốn xóa quiz này? Tất cả câu hỏi trong quiz cũng sẽ bị xóa.")) {
             try {
                 await deleteQuiz(id)
@@ -348,21 +354,25 @@ export default function LibraryPage() {
                                                             <TableCell>{quiz.timeLimit}m</TableCell>
                                                             <TableCell className="text-right">
                                                                 <div className="flex items-center justify-end gap-2">
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        onClick={() => handleManageQuestions(quiz.id)}
-                                                                        className="text-[#6B59CE] hover:text-[#5a4ab8]"
-                                                                    >
-                                                                        <FileQuestion className="h-4 w-4 mr-1" />
-                                                                        Câu hỏi
-                                                                    </Button>
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuiz(quiz.id)}>
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(quiz.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
+                                                                    {canManageQuiz && (
+                                                                        <>
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                                onClick={() => handleManageQuestions(quiz.id)}
+                                                                                className="text-[#6B59CE] hover:text-[#5a4ab8]"
+                                                                            >
+                                                                                <FileQuestion className="h-4 w-4 mr-1" />
+                                                                                Câu hỏi
+                                                                            </Button>
+                                                                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuiz(quiz.id)}>
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Button>
+                                                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(quiz.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </TableCell>
                                                         </TableRow>
@@ -420,10 +430,12 @@ export default function LibraryPage() {
                                     className="pl-10"
                                 />
                             </div>
-                            <Button onClick={handleOpenCreateQuestion} className="bg-[#6B59CE] hover:bg-[#5a4ab8]">
-                                <Plus className="w-4 h-4 mr-1" />
-                                Thêm
-                            </Button>
+                            {canManageQuiz && (
+                                <Button onClick={handleOpenCreateQuestion} className="bg-[#6B59CE] hover:bg-[#5a4ab8]">
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Thêm
+                                </Button>
+                            )}
                         </div>
 
                         {questionsLoading ? (
@@ -465,17 +477,21 @@ export default function LibraryPage() {
                                                 <TableCell>{question.points}</TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuestion(question.id)}>
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => handleDeleteQuestion(question.id)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        {canManageQuiz && (
+                                                            <>
+                                                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditQuestion(question.id)}>
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => handleDeleteQuestion(question.id)}
+                                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
