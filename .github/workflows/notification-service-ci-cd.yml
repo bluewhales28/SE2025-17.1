@@ -206,16 +206,15 @@ jobs:
             # Stop and remove old container first
             echo "Stopping existing container..."
             docker compose -f docker-compose.prod.yml down notification-service || true
-            docker compose -f docker-compose.prod.yml stop notification-service || true
-            docker compose -f docker-compose.prod.yml rm -f notification-service || true
+            docker rm -f $(docker ps -aq --filter "name=notification-service") || true
             
-            # Clean up Docker system to avoid snapshot conflicts
+            # Aggressive cleanup to avoid snapshot conflicts
             echo "Cleaning Docker system..."
-            docker container prune -f || true
-            docker image prune -f || true
             docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" -q | xargs -r docker rmi -f || true
-            docker system prune -f || true
+            docker image prune -af || true
+            docker container prune -f || true
             docker builder prune -af || true
+            docker system prune -af || true
             
             # Pull image with :latest tag
             echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
