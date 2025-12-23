@@ -1,6 +1,7 @@
 package com.example.class_assignment_service.listener;
 
 import com.example.class_assignment_service.model.StudentProgress;
+import com.example.class_assignment_service.repository.AssignmentRepository;
 import com.example.class_assignment_service.repository.StudentProgressRepository;
 import com.example.class_assignment_service.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +16,13 @@ public class QuizSubmittedListener {
     
     private final AssignmentService assignmentService;
     private final StudentProgressRepository progressRepository;
+    private final AssignmentRepository assignmentRepository;
     
     @RabbitListener(queues = "quiz.submitted")
     public void handleQuizSubmitted(QuizSubmittedEvent event) {
         log.info("Received quiz submitted event: {}", event);
         
-        // Find progress by quiz attempt ID
+        // 1) Try find by existing attemptId (old behavior)
         StudentProgress progress = progressRepository
             .findByAttemptIdIsNotNull()
             .stream()
@@ -28,13 +30,26 @@ public class QuizSubmittedListener {
             .findFirst()
             .orElse(null);
         
-        if (progress != null) {
-            assignmentService.syncProgressScore(
-                progress.getId(),
-                event.quizAttemptId(),
-                event.score() != null ? event.score().intValue() : 0
-            );
+        // 2) If not found, try map by quizId + userId (common case when attemptId not saved yet)
+        if (progress == null) {
+            assignmentRepository.findByQuizId(event.quizId()).forEach(assignment -> {
+                progressRepository.findByAssignmentIdAndStudentId(assignment.getId(), event.userId())
+                    .ifPresent(p -> {
+                        assignmentService.syncProgressScore(
+                            p.getId(),
+                            event.quizAttemptId(),
+                            event.score() != null ? event.score().intValue() : 0
+                        );
+                    });
+            });
+            return;
         }
+        
+        assignmentService.syncProgressScore(
+            progress.getId(),
+            event.quizAttemptId(),
+            event.score() != null ? event.score().intValue() : 0
+        );
     }
     
     public record QuizSubmittedEvent(Long quizAttemptId, Long quizId, Long userId, 

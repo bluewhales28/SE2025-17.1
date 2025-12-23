@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
+import { useRouter, useParams, useSearchParams } from "next/navigation"
 import { ArrowLeft, Clock, Target, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { useQuizStore } from "@/store/useQuizStore"
 import { useQuestionStore } from "@/store/useQuestionStore"
 import { toast } from "sonner"
+import { assignmentService } from "@/services/assignment.service"
 
 export default function QuizPage() {
     const router = useRouter()
     const params = useParams()
+    const searchParams = useSearchParams()
     const quizId = parseInt(params.id as string)
+    const assignmentId = searchParams?.get("assignmentId")
 
     const { getQuizById } = useQuizStore()
     const { questions, fetchQuestions } = useQuestionStore()
@@ -68,7 +71,7 @@ export default function QuizPage() {
     }
 
     useEffect(() => {
-        if (questions.length > 0 && quiz) {
+        if (Array.isArray(questions) && questions.length > 0 && quiz) {
             const filtered = questions.filter(q => q.quizId === quizId)
             setQuizQuestions(filtered)
         }
@@ -116,12 +119,12 @@ export default function QuizPage() {
         return totalScore
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const finalScore = calculateScore()
         setScore(finalScore)
         setIsSubmitted(true)
 
-        // Save to localStorage
+        // Lưu cục bộ cho mục tiêu hiển thị nhanh
         const completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes') || '[]')
         const quizResult = {
             quizId: quiz.id,
@@ -133,10 +136,20 @@ export default function QuizPage() {
             timeLeft: timeLeft
         }
 
-        // Remove old attempt if exists
         const filtered = completedQuizzes.filter((q: any) => q.quizId !== quiz.id)
         filtered.unshift(quizResult)
         localStorage.setItem('completedQuizzes', JSON.stringify(filtered))
+
+        // Đồng bộ trạng thái bài tập
+        if (assignmentId) {
+            try {
+                await assignmentService.submitAssignment(Number(assignmentId), {
+                    score: finalScore,
+                })
+            } catch (err: any) {
+                toast.error(err.message || "Không thể cập nhật trạng thái bài tập")
+            }
+        }
 
         toast.success(`Bạn đã hoàn thành bài thi! Điểm số: ${finalScore}/${quiz.totalPoints}`)
     }

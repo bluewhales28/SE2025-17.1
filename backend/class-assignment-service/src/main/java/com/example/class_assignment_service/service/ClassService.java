@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,7 @@ public class ClassService {
         classMemberRepository.save(teacher);
         
         log.info("Class created: {} by user: {}", classEntity.getId(), userId);
-        return toResponse(classEntity);
+        return toResponse(classEntity, userId);
     }
     
     @Transactional
@@ -76,13 +77,13 @@ public class ClassService {
         
         classEntity = classRepository.save(classEntity);
         log.info("Class updated: {} by user: {}", classId, userId);
-        return toResponse(classEntity);
+        return toResponse(classEntity, userId);
     }
     
     public ClassResponse getClassById(Long classId, Long userId) {
         ClassEntity classEntity = getClassById(classId);
         permissionService.checkMemberAccess(classId, userId);
-        return toResponse(classEntity);
+        return toResponse(classEntity, userId);
     }
     
     public List<ClassResponse> getClassesByUser(Long userId, String role) {
@@ -130,7 +131,7 @@ public class ClassService {
             log.info("Total unique classes: {}", classes.size());
         }
         
-        return classes.stream().map(this::toResponse).collect(Collectors.toList());
+        return classes.stream().map(c -> toResponse(c, userId)).collect(Collectors.toList());
     }
     
     @Transactional
@@ -150,7 +151,7 @@ public class ClassService {
         classEntity = classRepository.save(classEntity);
         
         log.info("Invitation code regenerated for class: {} by user: {}", classId, userId);
-        return toResponse(classEntity);
+        return toResponse(classEntity, userId);
     }
     
     @Transactional
@@ -171,7 +172,7 @@ public class ClassService {
         classMemberRepository.save(member);
         
         log.info("User {} joined class {} via invitation code", userId, classEntity.getId());
-        return toResponse(classEntity);
+        return toResponse(classEntity, userId);
     }
     
     private ClassEntity getClassById(Long classId) {
@@ -184,8 +185,26 @@ public class ClassService {
     }
     
     private ClassResponse toResponse(ClassEntity classEntity) {
+        return toResponse(classEntity, null);
+    }
+    
+    private ClassResponse toResponse(ClassEntity classEntity, Long userId) {
         Integer memberCount = classMemberRepository.countByClassIdAndRole(classEntity.getId(), ClassRole.STUDENT).intValue() +
             classMemberRepository.countByClassIdAndRole(classEntity.getId(), ClassRole.TEACHER).intValue();
+        
+        String userRole = null;
+        if (userId != null) {
+            // Check if user is teacher (by teacher_id)
+            if (classEntity.getTeacherId() != null && classEntity.getTeacherId().equals(userId)) {
+                userRole = "TEACHER";
+            } else {
+                // Check if user is member
+                Optional<ClassMember> memberOpt = classMemberRepository.findByClassEntityIdAndUserId(classEntity.getId(), userId);
+                if (memberOpt.isPresent()) {
+                    userRole = memberOpt.get().getRole().name();
+                }
+            }
+        }
         
         return ClassResponse.builder()
             .id(classEntity.getId())
@@ -202,6 +221,7 @@ public class ClassService {
             .updatedAt(classEntity.getUpdatedAt())
             .memberCount(memberCount)
             .assignmentCount(classEntity.getAssignments() != null ? classEntity.getAssignments().size() : 0)
+            .userRole(userRole)
             .build();
     }
 }

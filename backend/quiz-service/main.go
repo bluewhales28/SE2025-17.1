@@ -21,6 +21,7 @@ func main() {
 		quizzes.GET("", handlers.GetPublicQuizzes)
 		quizzes.POST("", handlers.CreateQuiz)
 		quizzes.GET("/:id", handlers.GetQuiz)
+		quizzes.DELETE("/:id", handlers.DeleteQuiz)
 	}
 
 	questions := r.Group("/questions")

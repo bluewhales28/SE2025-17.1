@@ -40,6 +40,7 @@ import QuizForm from "@/components/QuizForm"
 import QuestionForm from "@/components/QuestionForm"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { JoinClassDialog } from "@/components/JoinClassDialog"
 
 export default function LibraryPage() {
     const router = useRouter()
@@ -49,6 +50,7 @@ export default function LibraryPage() {
     const { classes, isLoading: classesLoading, fetchClasses } = useClassStore()
     const [searchQuery, setSearchQuery] = useState("")
     const [activeTab, setActiveTab] = useState("classes")
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
     const [darkMode, setDarkMode] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [quizFormOpen, setQuizFormOpen] = useState(false)
@@ -511,6 +513,7 @@ export default function LibraryPage() {
                 questionId={selectedQuestionId}
                 onSuccess={handleQuestionFormSuccess}
             />
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
     )
 }

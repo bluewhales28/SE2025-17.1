@@ -33,7 +33,7 @@ public class QuizServiceClient {
         try {
             return getWebClient()
                 .get()
-                .uri("/api/quizzes/{id}", quizId)
+                .uri("/quizzes/{id}", quizId)
                 .retrieve()
                 .onStatus(status -> status.is4xxClientError(), response -> {
                     log.error("Quiz not found: {}", quizId);
