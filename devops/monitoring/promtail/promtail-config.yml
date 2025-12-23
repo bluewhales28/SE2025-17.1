@@ -1,0 +1,124 @@
+# Promtail Configuration
+# Documentation: https://grafana.com/docs/loki/latest/clients/promtail/configuration/
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ========== Docker Container Logs ==========
+  - job_name: containers
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: containerlogs
+          __path__: /var/lib/docker/containers/*/*log
+
+    pipeline_stages:
+      # Parse Docker JSON log format
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            timestamp: time
+            
+      # Use timestamp from Docker log
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          
+      # Extract log level if present
+      - regex:
+          expression: '(?P<level>(DEBUG|INFO|WARN|WARNING|ERROR|FATAL|CRITICAL))'
+          
+      # Add labels from log content
+      - labels:
+          level:
+          stream:
+          
+      # Output the actual log message
+      - output:
+          source: output
+
+  # ========== System Logs ==========
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: systemlogs
+          __path__: /var/log/syslog
+
+  # ========== Service-specific logs (if mounted) ==========
+  # User Auth Service
+  - job_name: user-auth-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: user-auth-service
+          service: user-auth-service
+          __path__: /var/log/user-auth-service/*.log
+
+  # Notification Service
+  - job_name: notification-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: notification-service
+          service: notification-service
+          __path__: /var/log/notification-service/*.log
+
+  # Quiz Service
+  - job_name: quiz-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: quiz-service
+          service: quiz-service
+          __path__: /var/log/quiz-service/*.log
+
+  # Analytics Service
+  - job_name: analytics-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: analytics-service
+          service: analytics-service
+          __path__: /var/log/analytics-service/*.log
+
+  # Class Assignment Service
+  - job_name: class-assignment-service
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: class-assignment-service
+          service: class-assignment-service
+          __path__: /var/log/class-assignment-service/*.log
+
+  # ========== Docker Events ==========
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # Keep only containers with specific labels
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_log_stream']
+        target_label: 'logstream'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
