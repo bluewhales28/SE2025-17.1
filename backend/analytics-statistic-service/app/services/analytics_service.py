@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Any
+from psycopg2 import errors
 from app.db.connection import get_db_connection
 from app.services.cache_service import CacheService
 
@@ -28,12 +29,17 @@ class AnalyticsService:
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT user_id, score, total_score, topic, difficulty, submitted_at
-            FROM quiz_attempt_events
-            WHERE quiz_id = %s
-        """, (quiz_id,))
-        rows = cur.fetchall()
+        try:
+            cur.execute("""
+                SELECT user_id, score, total_score, topic, difficulty, submitted_at
+                FROM quiz_attempt_events
+                WHERE quiz_id = %s
+            """, (quiz_id,))
+            rows = cur.fetchall()
+        except errors.UndefinedTable:
+            # Chưa có bảng log attempt -> trả rỗng để tránh 500
+            conn.close()
+            return {}
         conn.close()
 
         if not rows:
@@ -91,12 +97,16 @@ class AnalyticsService:
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT quiz_id, score, total_score, topic, difficulty, submitted_at
-            FROM quiz_attempt_events
-            WHERE user_id = %s
-        """, (student_id,))
-        rows = cur.fetchall()
+        try:
+            cur.execute("""
+                SELECT quiz_id, score, total_score, topic, difficulty, submitted_at
+                FROM quiz_attempt_events
+                WHERE user_id = %s
+            """, (student_id,))
+            rows = cur.fetchall()
+        except errors.UndefinedTable:
+            conn.close()
+            return {}
         conn.close()
 
         if not rows:
@@ -155,12 +165,16 @@ class AnalyticsService:
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT user_id, score, total_score, quiz_id, topic
-            FROM quiz_attempt_events
-            WHERE class_id = %s
-        """, (class_id,))
-        rows = cur.fetchall()
+        try:
+            cur.execute("""
+                SELECT user_id, score, total_score, quiz_id, topic
+                FROM quiz_attempt_events
+                WHERE class_id = %s
+            """, (class_id,))
+            rows = cur.fetchall()
+        except errors.UndefinedTable:
+            conn.close()
+            return {}
         conn.close()
 
         if not rows:
@@ -221,12 +235,24 @@ class AnalyticsService:
         # System average (all quizzes)
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT AVG(score::float / total_score * 100) as system_avg
-            FROM quiz_attempt_events
-        """)
-        row = cur.fetchone()
-        system_avg = round(row["system_avg"], 2) if row and row["system_avg"] else 0
+        try:
+            cur.execute("""
+                SELECT AVG(score::float / total_score * 100) as system_avg
+                FROM quiz_attempt_events
+            """)
+            row = cur.fetchone()
+            system_avg = round(row["system_avg"], 2) if row and row["system_avg"] else 0
+        except errors.UndefinedTable:
+            conn.close()
+            return {
+                "student_id": student_id,
+                "student_avg": student_report.get("avg_score", 0),
+                "class_avg": class_avg,
+                "system_avg": 0,
+                "vs_class": round(student_report.get("avg_score", 0) - class_avg, 2) if class_avg else None,
+                "vs_system": student_report.get("avg_score", 0),
+                "percentile_vs_class": None
+            }
         conn.close()
 
         student_avg = student_report.get("avg_score", 0)
@@ -245,12 +271,16 @@ class AnalyticsService:
         """Calculate student percentile in class"""
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            SELECT score, total_score
-            FROM quiz_attempt_events
-            WHERE class_id = %s
-        """, (class_id,))
-        rows = cur.fetchall()
+        try:
+            cur.execute("""
+                SELECT score, total_score
+                FROM quiz_attempt_events
+                WHERE class_id = %s
+            """, (class_id,))
+            rows = cur.fetchall()
+        except errors.UndefinedTable:
+            conn.close()
+            return 0
         conn.close()
 
         if not rows:
@@ -285,6 +315,9 @@ class AnalyticsService:
         """
         try:
             df = pd.read_sql(query, conn, params=(question_id,))
+        except errors.UndefinedTable:
+            conn.close()
+            return {"message": "No data"}
         except Exception:
             # Fallback if question_attempts table doesn't exist
             query = """
@@ -294,7 +327,11 @@ class AnalyticsService:
                 SELECT quiz_id FROM questions WHERE id = %s
             )
             """
-            df = pd.read_sql(query, conn, params=(question_id,))
+            try:
+                df = pd.read_sql(query, conn, params=(question_id,))
+            except errors.UndefinedTable:
+                conn.close()
+                return {"message": "No data"}
         
         conn.close()
 
