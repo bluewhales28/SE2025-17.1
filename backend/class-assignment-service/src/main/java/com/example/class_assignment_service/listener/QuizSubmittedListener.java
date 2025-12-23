@@ -1,6 +1,7 @@
 package com.example.class_assignment_service.listener;
 
 import com.example.class_assignment_service.model.StudentProgress;
+import com.example.class_assignment_service.repository.AssignmentRepository;
 import com.example.class_assignment_service.repository.StudentProgressRepository;
 import com.example.class_assignment_service.service.AssignmentService;
 import lombok.RequiredArgsConstructor;
