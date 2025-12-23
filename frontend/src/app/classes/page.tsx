@@ -21,6 +21,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { useClassStore } from "@/store/useClassStore"
 import { toast } from "sonner"
 import { ClassResponse } from "@/types/class"
+import { JoinClassDialog } from "@/components/JoinClassDialog"
 
 export default function ClassesPage() {
     const router = useRouter()
@@ -29,6 +30,7 @@ export default function ClassesPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [roleFilter, setRoleFilter] = useState<"TEACHER" | "STUDENT" | undefined>(undefined)
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
 
     useEffect(() => {
         initializeUser()
@@ -114,7 +116,7 @@ export default function ClassesPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
                         <Plus className="h-5 w-5" />
                     </Button>
                     <Button variant="ghost" size="icon">
@@ -331,6 +333,7 @@ export default function ClassesPage() {
                     )}
                 </div>
             </main>
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
     )
 }

@@ -29,6 +29,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { useQuizStore } from "@/store/useQuizStore"
 import { SubjectCard } from "@/components/common/SubjectCard"
 import { FeatureSection } from "@/components/landing/FeatureSection"
+import { JoinClassDialog } from "@/components/JoinClassDialog"
 
 export default function HomePage() {
     const router = useRouter()
@@ -38,6 +39,7 @@ export default function HomePage() {
     const [darkMode, setDarkMode] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const [completedQuizzes, setCompletedQuizzes] = useState<any[]>([])
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
 
     const [emblaRef, emblaApi] = useEmblaCarousel(
         {
@@ -223,7 +225,7 @@ export default function HomePage() {
 
                         {/* Right Section - Actions & Profile */}
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
                                 <Plus className="h-6 w-6" />
                             </Button>
                             <Button variant="ghost" size="icon">
@@ -615,6 +617,7 @@ export default function HomePage() {
                     <FeatureSection />
                 </div>
             </main>
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
     )
 }

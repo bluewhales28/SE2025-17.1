@@ -20,6 +20,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuthStore } from "@/store/useAuthStore"
 import { toast } from "sonner"
+import { JoinClassDialog } from "@/components/JoinClassDialog"
 
 export default function AccountPage() {
     const router = useRouter()
@@ -29,6 +30,7 @@ export default function AccountPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [darkMode, setDarkMode] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [joinDialogOpen, setJoinDialogOpen] = useState(false)
     const [profileData, setProfileData] = useState({
         name: "Admin User",
         username: user?.email?.split('@')[0] || "admin",
@@ -124,7 +126,7 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" onClick={() => setJoinDialogOpen(true)}>
                                 <Plus className="h-6 w-6" />
                             </Button>
                             <Button variant="ghost" size="icon">
@@ -431,6 +433,7 @@ export default function AccountPage() {
                     </div>
                 </div>
             </main>
+            <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
     )
 }
