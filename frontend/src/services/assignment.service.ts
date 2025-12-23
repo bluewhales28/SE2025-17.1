@@ -98,5 +98,19 @@ export const assignmentService = {
 
         return await response.json();
     },
+
+    async startAssignment(assignmentId: number): Promise<ApiResponse<void>> {
+        const response = await fetch(`${API_BASE_URL}/assignments/${assignmentId}/start`, {
+            method: "POST",
+            headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: "Bắt đầu bài tập thất bại" }));
+            throw new Error(error.message || error.detail || "Bắt đầu bài tập thất bại");
+        }
+
+        return await response.json();
+    },
 };
 

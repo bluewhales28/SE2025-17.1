@@ -365,9 +365,15 @@ export default function ClassAssignmentsPage() {
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
-                                                                onClick={() => {
-                                                                    // TODO: Navigate to do assignment
-                                                                    toast.info("Chức năng làm bài tập đang được phát triển")
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        // Start assignment first
+                                                                        await assignmentService.startAssignment(assignment.id)
+                                                                        // Navigate to quiz page
+                                                                        router.push(`/quiz/${assignment.quizId}?assignmentId=${assignment.id}`)
+                                                                    } catch (err: any) {
+                                                                        toast.error(err.message || "Không thể bắt đầu bài tập")
+                                                                    }
                                                                 }}
                                                                 disabled={assignment.userStatus === "SUBMITTED" && !assignment.allowRetake}
                                                             >
