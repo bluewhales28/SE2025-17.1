@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Search, Plus, Bell, Menu, Home, Users, BookOpen, Copy, MoreVertical, Edit, Trash2, RefreshCw, LogOut, User } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +25,7 @@ import { JoinClassDialog } from "@/components/JoinClassDialog"
 
 export default function ClassesPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { user, logout, initializeUser } = useAuthStore()
     const { classes, isLoading, error, fetchClasses, deleteClass, regenerateInvitationCode } = useClassStore()
     const [searchQuery, setSearchQuery] = useState("")
@@ -35,6 +36,14 @@ export default function ClassesPage() {
     useEffect(() => {
         initializeUser()
     }, [initializeUser])
+
+    // Set initial role filter based on query param (?role=TEACHER or ?role=STUDENT)
+    useEffect(() => {
+        const role = searchParams.get("role")
+        if (role === "TEACHER" || role === "STUDENT") {
+            setRoleFilter(role)
+        }
+    }, [searchParams])
 
     useEffect(() => {
         fetchClasses(roleFilter)
