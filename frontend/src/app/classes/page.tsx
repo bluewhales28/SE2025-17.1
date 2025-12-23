@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Search, Plus, Bell, Menu, Home, Users, BookOpen, Copy, MoreVertical, Edit, Trash2, RefreshCw, LogOut, User } from "lucide-react"
@@ -25,7 +25,7 @@ import { toast } from "sonner"
 import { ClassResponse } from "@/types/class"
 import { JoinClassDialog } from "@/components/JoinClassDialog"
 
-export default function ClassesPage() {
+function ClassesPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { user, logout, initializeUser } = useAuthStore()
@@ -346,6 +346,14 @@ export default function ClassesPage() {
             </main>
             <JoinClassDialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen} />
         </div>
+    )
+}
+
+export default function ClassesPage() {
+    return (
+        <Suspense fallback={<div className="p-6">Đang tải...</div>}>
+            <ClassesPageContent />
+        </Suspense>
     )
 }
 
