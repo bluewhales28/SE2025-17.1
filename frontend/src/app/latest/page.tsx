@@ -121,22 +121,27 @@ export default function HomePage() {
     useEffect(() => {
         const loadCompletedQuizzes = () => {
             if (!user?.email) {
+                console.log('📭 No user email, clearing completedQuizzes')
                 setCompletedQuizzes([])
                 return
             }
             
             // Load completedQuizzes theo email của user hiện tại
             const storageKey = `completedQuizzes_${user.email}`
+            console.log('🔍 Loading completedQuizzes for:', user.email, 'Key:', storageKey)
             const stored = localStorage.getItem(storageKey)
             
             if (stored) {
                 try {
-                    setCompletedQuizzes(JSON.parse(stored))
+                    const parsed = JSON.parse(stored)
+                    console.log('✅ Loaded completedQuizzes:', parsed.length, 'quizzes')
+                    setCompletedQuizzes(parsed)
                 } catch (err) {
-                    console.error('Error parsing completedQuizzes:', err)
+                    console.error('❌ Error parsing completedQuizzes:', err)
                     setCompletedQuizzes([])
                 }
             } else {
+                console.log('📭 No completedQuizzes found for user:', user.email)
                 // Nếu không có dữ liệu mới, kiểm tra dữ liệu cũ (backward compatibility)
                 const oldStored = localStorage.getItem('completedQuizzes')
                 if (oldStored) {
@@ -145,6 +150,7 @@ export default function HomePage() {
                         // Chỉ load nếu có dữ liệu và user đã đăng nhập
                         if (oldData.length > 0 && user) {
                             // Migrate sang key mới
+                            console.log('🔄 Migrating old completedQuizzes to new key')
                             localStorage.setItem(storageKey, oldStored)
                             localStorage.removeItem('completedQuizzes')
                             setCompletedQuizzes(oldData)
@@ -152,7 +158,7 @@ export default function HomePage() {
                             setCompletedQuizzes([])
                         }
                     } catch (err) {
-                        console.error('Error parsing old completedQuizzes:', err)
+                        console.error('❌ Error parsing old completedQuizzes:', err)
                         setCompletedQuizzes([])
                     }
                 } else {
@@ -166,6 +172,7 @@ export default function HomePage() {
         // Refresh on storage change (when quiz is completed in another tab)
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key === `completedQuizzes_${user?.email}` || e.key === 'completedQuizzes') {
+                console.log('🔄 Storage changed, reloading completedQuizzes')
                 loadCompletedQuizzes()
             }
         }

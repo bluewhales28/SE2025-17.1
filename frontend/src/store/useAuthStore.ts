@@ -85,7 +85,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     logout: async () => {
         set({ isLoading: true })
-        const currentUser = get().user
         try {
             const token = Cookies.get('accessToken') || localStorage.getItem('accessToken')
             if (token) {
@@ -94,21 +93,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         } catch (err: any) {
             console.error('Logout API error:', err)
         } finally {
-            // Xóa token
+            // Xóa token - KHÔNG xóa completedQuizzes để giữ lại dữ liệu khi đăng nhập lại
             Cookies.remove('accessToken')
             localStorage.removeItem('accessToken')
             
-            // Xóa completedQuizzes của user hiện tại
-            if (currentUser?.email) {
-                localStorage.removeItem(`completedQuizzes_${currentUser.email}`)
+            // Chỉ xóa completedQuizzes key cũ (backward compatibility) nếu có
+            // KHÔNG xóa completedQuizzes theo email vì cần giữ lại cho lần đăng nhập sau
+            const oldKey = localStorage.getItem('completedQuizzes')
+            if (oldKey) {
+                localStorage.removeItem('completedQuizzes')
             }
-            
-            // Xóa tất cả completedQuizzes keys cũ (backward compatibility)
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('completedQuizzes')) {
-                    localStorage.removeItem(key)
-                }
-            })
             
             set({ user: null, isLoading: false })
             window.location.href = '/'
