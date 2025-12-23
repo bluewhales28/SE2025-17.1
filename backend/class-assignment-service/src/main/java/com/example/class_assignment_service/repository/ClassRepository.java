@@ -22,10 +22,10 @@ public interface ClassRepository extends JpaRepository<ClassEntity, Long> {
     // For TEACHER: classes where user is teacher (by teacher_id) OR member with TEACHER role
     // For STUDENT: classes where user is member with STUDENT role
     @Query("SELECT DISTINCT c FROM ClassEntity c " +
-           "LEFT JOIN c.members m ON m.userId = :userId " +
+           "LEFT JOIN c.members m " +
            "WHERE " +
-           "(:role = 'TEACHER' AND (c.teacherId = :userId OR (m.userId = :userId AND m.role = 'TEACHER'))) OR " +
-           "(:role = 'STUDENT' AND m.userId = :userId AND m.role = 'STUDENT')")
+           "(:role = 'TEACHER' AND (c.teacherId = :userId OR (m.userId = :userId AND m.role = com.example.class_assignment_service.model.enums.ClassRole.TEACHER))) OR " +
+           "(:role = 'STUDENT' AND m.userId = :userId AND m.role = com.example.class_assignment_service.model.enums.ClassRole.STUDENT)")
     List<ClassEntity> findByUserIdAndRole(@Param("userId") Long userId, @Param("role") String role);
     
     List<ClassEntity> findByStatus(String status);
