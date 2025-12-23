@@ -3,7 +3,7 @@ name: Frontend CI/CD
 on:
   push:
     branches:
-      - quan
+      - main
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci-cd.yml'
@@ -118,7 +118,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=prod,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -133,158 +134,12 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://localhost/api/v1' }}
 
-  # ==================== DEPLOY DEV ====================
-  deploy-dev:
-    name: Deploy to Development
-    runs-on: ubuntu-latest
-    needs: docker
-    if: github.ref == 'refs/heads/quan'
-    environment:
-      name: development
-
-    steps:
-      - name: Deploy to Development Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEV_HOST }}
-          username: ${{ secrets.DEV_USERNAME }}
-          key: ${{ secrets.DEV_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            echo "Deploying Frontend to Development..."
-            
-            # Login to GitHub Container Registry
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            
-            # Setup directory
-            mkdir -p ~/SE2025-17.1
-            cd ~/SE2025-17.1
-            
-            # Clone repo if not exists
-            if [ ! -d .git ]; then
-              git clone https://github.com/bluewhales28/SE2025-17.1.git .
-            fi
-            
-            # Pull latest code (reset to match remote exactly)
-            git fetch origin
-            CURRENT_BRANCH="${{ github.ref_name }}"
-            git checkout ${CURRENT_BRANCH} 2>/dev/null || git checkout -b ${CURRENT_BRANCH} origin/${CURRENT_BRANCH} 2>/dev/null || git checkout dev
-            git reset --hard origin/${CURRENT_BRANCH} 2>/dev/null || git reset --hard origin/dev
-            
-            # Ensure .env file exists
-            if [ ! -f .env ]; then
-              echo "Creating .env file from template..."
-              echo "# Database Configuration" > .env
-              echo "POSTGRES_USER=postgres" >> .env
-              echo "POSTGRES_PASSWORD=password" >> .env
-              echo "DB_NAME=quizz" >> .env
-              echo "DB_HOST=postgres" >> .env
-              echo "DB_PORT=5432" >> .env
-              echo "" >> .env
-              echo "# JWT Configuration" >> .env
-              echo "JWT_SECRET=5020f057d0d31c44d2397a3265c89b86b95a1903160610e290786cfe36e43e7b" >> .env
-              echo "" >> .env
-              echo "# Frontend URL" >> .env
-              echo "FRONTEND_URL=http://34.135.81.236" >> .env
-              echo "" >> .env
-              echo "# SMTP Configuration (Gmail)" >> .env
-              echo "SMTP_HOST=smtp.gmail.com" >> .env
-              echo "SMTP_PORT=587" >> .env
-              echo "SMTP_USER=" >> .env
-              echo "SMTP_PASSWORD=" >> .env
-              echo "SMTP_FROM_EMAIL=" >> .env
-              echo "SMTP_FROM_NAME=Quiz App" >> .env
-              echo "" >> .env
-              echo "# Redis Configuration" >> .env
-              echo "REDIS_HOST=redis" >> .env
-              echo "REDIS_PORT=6379" >> .env
-              echo "" >> .env
-              echo "# RabbitMQ Configuration" >> .env
-              echo "RABBITMQ_HOST=rabbitmq" >> .env
-              echo "RABBITMQ_PORT=5672" >> .env
-              echo "RABBITMQ_USER=guest" >> .env
-              echo "RABBITMQ_PASSWORD=guest" >> .env
-              echo ".env file created!"
-            else
-              echo ".env file already exists, skipping creation."
-            fi
-            
-            # Ensure frontend/.env.production file exists
-            mkdir -p frontend
-            if [ ! -f frontend/.env.production ]; then
-              echo "Creating frontend/.env.production file..."
-              echo "NEXT_PUBLIC_API_URL=http://34.135.81.236/api/v1" > frontend/.env.production
-              echo "NEXT_PUBLIC_AUTH_API_URL=http://34.135.81.236/api/v1" >> frontend/.env.production
-              echo "NEXT_PUBLIC_QUIZ_API_URL=http://34.135.81.236/api/v1" >> frontend/.env.production
-              echo "NEXT_PUBLIC_NOTIFICATION_API_URL=http://34.135.81.236/api/v1" >> frontend/.env.production
-              echo "frontend/.env.production file created!"
-            else
-              echo "frontend/.env.production file already exists, skipping creation."
-            fi
-            
-            # Pull image with branch tag (cleanup any partial snapshots)
-            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
-            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || true
-            docker image prune -f || true
-            echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || {
-              echo "Image not found for tag ${BRANCH_TAG}. Ensure CI build & push completed."
-              exit 1
-            }
-            
-            # Tag as :dev for docker-compose compatibility
-            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
-            # Pull image with branch tag (cleanup any partial snapshots)
-            BRANCH_TAG=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
-            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
-            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || true
-            docker image prune -f || true
-            echo "Pulling image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG}"
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} || {
-              echo "Image not found for tag ${BRANCH_TAG}. Ensure CI build & push completed."
-              exit 1
-            }
-            
-            # Tag as :dev for docker-compose compatibility
-            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${BRANCH_TAG} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
-            
-            # Cleanup old images (keep :dev and current branch tag)
-            echo "Cleaning up old images..."
-            # Remove old branch-tagged images (keep only last 2 versions)
-            docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --format "{{.Repository}}:{{.Tag}}" | grep -v ":dev$" | grep -v ":${BRANCH_TAG}$" | tail -n +3 | xargs -r docker rmi -f || true
-            # Remove dangling images
-            docker image prune -f || true
-            # Remove untagged images of this service
-            docker images "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" --filter "dangling=true" -q | xargs -r docker rmi -f || true
-            echo "Cleanup completed!"
-            
-            # Restart service
-            docker compose -f docker-compose.prod.yml up -d frontend
-            
-            # Wait for service to start
-            echo "Waiting for service to start..."
-            sleep 10
-            
-            # Check service status
-            docker compose -f docker-compose.prod.yml ps frontend
-            
-            # Check if frontend is accessible
-            echo "Checking frontend accessibility..."
-            docker compose -f docker-compose.prod.yml exec -T frontend wget -q -O- http://localhost:3000 | head -20 || echo "Frontend not ready yet"
-            
-            # Show recent logs
-            echo "Recent logs:"
-            docker compose -f docker-compose.prod.yml logs --tail=20 frontend
-            
-            echo "Deployment completed!"
-
   # ==================== DEPLOY PRODUCTION ====================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/quan'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: production
 

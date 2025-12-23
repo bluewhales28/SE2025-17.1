@@ -3,7 +3,7 @@ name: Analytics Service CI/CD
 on:
   push:
     branches:
-      - quan
+      - main
       - 'feature/**'
     paths:
       - 'backend/analytics-statistic-service/**'
@@ -174,7 +174,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/main' }}
+            type=raw,value=prod,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -187,39 +188,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ==================== DEPLOY DEV ====================
-  deploy-dev:
-    name: Deploy to Development
-    runs-on: ubuntu-latest
-    needs: docker
-    if: github.ref == 'refs/heads/quan'
-    environment:
-      name: development
-
-    steps:
-      - name: Deploy to Development Server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEV_HOST }}
-          username: ${{ secrets.DEV_USERNAME }}
-          key: ${{ secrets.DEV_SSH_KEY }}
-          script: |
-            echo "Deploying Analytics Service to Development..."
-            cd /opt/quiz-platform
-            echo "Cleaning old image tag (if any): ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev"
-            docker rmi ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev || true
-            docker image prune -f || true
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev
-            docker-compose up -d analytics-service
-            docker-compose ps analytics-service
-            echo "Deployment completed!"
-
   # ==================== DEPLOY PRODUCTION ====================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: docker
-    if: github.ref == 'refs/heads/quan'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: production
 
